@@ -1,0 +1,6 @@
+# Require maintainer review for all repository changes.
+* @sagebynature
+
+# Treat automation and security policy changes as sensitive.
+.github/ @sagebynature
+SECURITY.md @sagebynature
