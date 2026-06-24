@@ -225,8 +225,11 @@ def file_response(path: Path, root: Path) -> FileResponse:
     if os.path.commonpath([resolved_root, resolved_path]) != resolved_root:
         raise HTTPException(status_code=404, detail="artifact not found")
     safe_path = Path(resolved_path)
+    # Path was normalized and checked against resolved_root above.
+    # codeql[py/path-injection]
     if not safe_path.exists():
         raise HTTPException(status_code=404, detail="artifact not found")
+    # codeql[py/path-injection]
     return FileResponse(safe_path, media_type="video/mp4")
 
 
