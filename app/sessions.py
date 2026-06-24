@@ -5,7 +5,13 @@ from pathlib import Path
 from threading import Lock
 from uuid import uuid4
 
-from app.models import Operation, RenderCacheMode, RenderSummary, SessionDetail, SessionSummary
+from app.models import (
+    Operation,
+    RenderCacheMode,
+    RenderSummary,
+    SessionDetail,
+    SessionSummary,
+)
 
 
 def now_iso() -> str:
@@ -22,7 +28,11 @@ class SessionStore:
     def list_ids(self) -> list[str]:
         if not self.sessions_dir.exists():
             return []
-        return sorted(path.name for path in self.sessions_dir.iterdir() if (path / "session.json").exists())
+        return sorted(
+            path.name
+            for path in self.sessions_dir.iterdir()
+            if (path / "session.json").exists()
+        )
 
     def path(self, session_id: str) -> Path:
         if "/" in session_id or ".." in session_id:
@@ -54,12 +64,19 @@ class SessionService:
         self.renderer = renderer
 
     def create_session(self, title: str | None) -> SessionDetail:
-        detail = SessionDetail(sessionId=str(uuid4()), title=title, operationCount=0, operations=[])
+        detail = SessionDetail(
+            sessionId=str(uuid4()), title=title, operationCount=0, operations=[]
+        )
         self.store.save(detail)
         return detail
 
     def list_sessions(self) -> list[SessionSummary]:
-        return [SessionSummary(**self.store.load(session_id).model_dump(exclude={"operations"})) for session_id in self.store.list_ids()]
+        return [
+            SessionSummary(
+                **self.store.load(session_id).model_dump(exclude={"operations"})
+            )
+            for session_id in self.store.list_ids()
+        ]
 
     def get_session(self, session_id: str) -> SessionDetail:
         return self.store.load(session_id)

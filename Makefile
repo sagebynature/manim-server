@@ -12,18 +12,24 @@ TY_ARGS ?= app tests
 IMAGE ?= manim-server
 CONTAINER ?= manim-server-smoke
 
-.PHONY: sync test typecheck build run smoke docker-build docker-run docker-smoke
+.PHONY: sync test lint format typecheck build run smoke docker-build docker-run docker-smoke
 
 sync:
 	$(UV) sync --all-groups
 
-test:
-	$(UV) run pytest $(PYTEST_ARGS)
+lint:
+	$(UV) run ruff check $(TY_ARGS) --fix
+
+format:
+	$(UV) run ruff format $(TY_ARGS)
 
 typecheck:
 	$(UV) run ty check $(TY_ARGS)
 
-build: typecheck test
+test: lint format typecheck
+	$(UV) run pytest $(PYTEST_ARGS)
+
+build: test
 	$(UV) build
 
 run:
@@ -37,7 +43,8 @@ docker-build:
 
 docker-run:
 	mkdir -p $(DATA_DIR)
-	docker run --name manim-server --rm -p $(PORT):8000 -e DATA_DIR=/data -e MANIM_CLI_FLAGS=$(MANIM_CLI_FLAGS) -v "$(CURDIR)/$(DATA_DIR):/data" $(IMAGE)
+	docker rm -f manim-server >/dev/null 2>&1 || true
+	docker run --name manim-server --rm -d -p $(PORT):8000 -e DATA_DIR=/data -e MANIM_CLI_FLAGS=$(MANIM_CLI_FLAGS) -v "$(CURDIR)/$(DATA_DIR):/data" $(IMAGE)
 
 docker-smoke: docker-build
 	docker rm -f $(CONTAINER) >/dev/null 2>&1 || true

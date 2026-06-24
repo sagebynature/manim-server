@@ -12,12 +12,17 @@ class FakeRenderer:
 
 
 def test_mcp_tools_call_shared_service(tmp_path):
-    tools = create_tool_functions(SessionService(SessionStore(tmp_path), FakeRenderer()))
+    tools = create_tool_functions(
+        SessionService(SessionStore(tmp_path), FakeRenderer())
+    )
 
     session = tools["create_session"]("Demo")
     appended = tools["append_operation"](session["sessionId"], "self.wait(1)", True)
 
-    assert appended["latestRender"]["fullVideoUrl"] == f"/sessions/{session['sessionId']}/video"
+    assert (
+        appended["latestRender"]["fullVideoUrl"]
+        == f"/sessions/{session['sessionId']}/video"
+    )
     assert tools["get_session"](session["sessionId"])["operationCount"] == 1
 
 
@@ -25,7 +30,9 @@ def test_app_mounts_mcp_route(tmp_path):
     app = create_app(data_dir=tmp_path, renderer=FakeRenderer())
 
     assert app.state.mcp is not None
-    assert any(isinstance(route, Mount) and route.path == "/mcp" for route in app.routes)
+    assert any(
+        isinstance(route, Mount) and route.path == "/mcp" for route in app.routes
+    )
 
 
 def test_mcp_tool_descriptions_guide_clients(tmp_path):

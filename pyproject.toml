@@ -16,11 +16,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-  "httpx2",
-  "pytest>=8.2",
-  "ty>=0.0.18",
-]
+dev = ["httpx2", "pytest>=8.2", "ty>=0.0.18", "ruff>=0.5"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

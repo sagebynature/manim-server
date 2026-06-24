@@ -10,7 +10,10 @@ def test_session_store_persists_operations(tmp_path):
     op2 = service.append_operation(session.sessionId, "self.wait(1)")
 
     reloaded = SessionService(SessionStore(tmp_path)).get_session(session.sessionId)
-    assert [op.operationId for op in reloaded.operations] == [op1.operationId, op2.operationId]
+    assert [op.operationId for op in reloaded.operations] == [
+        op1.operationId,
+        op2.operationId,
+    ]
     assert reloaded.operationCount == 2
 
 
@@ -29,10 +32,15 @@ def test_reset_keeps_session_but_clears_operations(tmp_path):
 class RecordingRenderer:
     def render(self, session_id, operations, cache):
         sections = [
-            SectionArtifact(operationId=operation.operationId, videoUrl=f"/sessions/{session_id}/sections/{operation.operationId}/video")
+            SectionArtifact(
+                operationId=operation.operationId,
+                videoUrl=f"/sessions/{session_id}/sections/{operation.operationId}/video",
+            )
             for operation in operations
         ]
-        return RenderSummary(fullVideoUrl=f"/sessions/{session_id}/video", sections=sections)
+        return RenderSummary(
+            fullVideoUrl=f"/sessions/{session_id}/video", sections=sections
+        )
 
 
 def test_render_is_single_current_snapshot_with_sections(tmp_path):
@@ -46,7 +54,10 @@ def test_render_is_single_current_snapshot_with_sections(tmp_path):
 
     assert first.fullVideoUrl == f"/sessions/{session.sessionId}/video"
     assert second.fullVideoUrl == f"/sessions/{session.sessionId}/video"
-    assert [section.operationId for section in second.sections] == ["op-0001", "op-0002"]
+    assert [section.operationId for section in second.sections] == [
+        "op-0001",
+        "op-0002",
+    ]
     assert [section.videoUrl for section in second.sections] == [
         f"/sessions/{session.sessionId}/sections/op-0001/video",
         f"/sessions/{session.sessionId}/sections/op-0002/video",
