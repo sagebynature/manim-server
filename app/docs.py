@@ -43,16 +43,16 @@ DOCS: dict[str, EndpointDoc] = {
         "appended in order, so use this for incremental scene construction after "
         "create_session. Prefer render=False while batching multiple small edits; "
         "use render=True when the client needs an immediate video update after the "
-        "append. cache controls rendering when render=True: use reuses existing "
-        "Manim cache, refresh rerenders with cache refresh, disable renders without "
-        "cache. Returns the appended section and latestRender only when render=True.",
+        "append. cache defaults to use and only affects render=True: use reuses "
+        "Manim cache, flush deletes partial movie cache before rendering, "
+        "disable renders without cache. Returns appended section latestRender only render=True.",
     ),
     "render_scene": EndpointDoc(
         "Render scene",
         "Render an existing Manim session synchronously. Use after one or more "
         "append_section calls with render=False when the client needs a fresh "
-        "video URL. cache may be use, refresh, or disable. Returns the full video "
-        "URL and section metadata.",
+        "video URL. cache defaults to use; valid modes are use, flush, "
+        "disable. Returns full video URL and section metadata.",
     ),
     "reset_session": EndpointDoc(
         "Reset session",

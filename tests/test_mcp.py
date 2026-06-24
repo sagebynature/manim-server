@@ -50,6 +50,6 @@ def test_mcp_tool_descriptions_guide_clients(tmp_path):
     assert "render=False" in append_description
     assert "render=True" in append_description
     assert "cache" in append_description
-    assert "use" in append_description
-    assert "refresh" in append_description
+    assert "defaults to use" in append_description
+    assert "flush" in append_description
     assert "disable" in append_description

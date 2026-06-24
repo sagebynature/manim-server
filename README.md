@@ -76,31 +76,31 @@ curl -sS -X POST http://127.0.0.1:8000/sessions \
   -d '{"title":"Five animated sections curl smoke"}'
 
 # POST /sessions/<sessionId>/section appends one Manim code section.
-# render=false records the code without invoking Manim yet.
+# render=false records code without invoking Manim; cache is ignored until rendering.
 curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
   -H 'content-type: application/json' \
-  -d '{"title":"Create blue circle","code":"circle = Circle(color=BLUE)\nself.play(Create(circle), run_time=1.0)","render":false,"cache":"disable"}'
+  -d '{"title":"Create blue circle","code":"circle = Circle(color=BLUE)\nself.play(Create(circle), run_time=1.0)","render":false}'
 
 # Another section. Sections run in append order inside the generated scene.
 curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
   -H 'content-type: application/json' \
-  -d '{"title":"Create green square","code":"square = Square(color=GREEN).shift(RIGHT * 2)\nself.play(Create(square), run_time=1.0)","render":false,"cache":"disable"}'
+  -d '{"title":"Create green square","code":"square = Square(color=GREEN).shift(RIGHT * 2)\nself.play(Create(square), run_time=1.0)","render":false}'
 
 # Adds a third shape, still only updating the session JSON log.
 curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
   -H 'content-type: application/json' \
-  -d '{"title":"Create yellow triangle","code":"triangle = Triangle(color=YELLOW).shift(LEFT * 2)\nself.play(Create(triangle), run_time=1.0)","render":false,"cache":"disable"}'
+  -d '{"title":"Create yellow triangle","code":"triangle = Triangle(color=YELLOW).shift(LEFT * 2)\nself.play(Create(triangle), run_time=1.0)","render":false}'
 
 # Adds a fourth animation section.
 curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
   -H 'content-type: application/json' \
-  -d '{"title":"Create lower line","code":"line = Line(LEFT, RIGHT, color=RED).shift(DOWN * 1.5)\nself.play(Create(line), run_time=1.0)","render":false,"cache":"disable"}'
+  -d '{"title":"Create lower line","code":"line = Line(LEFT, RIGHT, color=RED).shift(DOWN * 1.5)\nself.play(Create(line), run_time=1.0)","render":false}'
 
-# Final section with render=true appends code, runs Manim, and returns latestRender
-# with fullVideoUrl plus per-section video URLs.
+# Final section render=true appends code and runs Manim. cache defaults to "use",
+# so omitting it lets Manim reuse existing cached partial movie files.
 curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
   -H 'content-type: application/json' \
-  -d '{"title":"Create purple ellipse","code":"ellipse = Ellipse(width=3, height=1.5, color=PURPLE).shift(UP * 1.5)\nself.play(Create(ellipse), run_time=1.0)\nself.wait(0.1)","render":true,"cache":"disable"}'
+  -d '{"title":"Create purple ellipse","code":"ellipse = Ellipse(width=3, height=1.5, color=PURPLE).shift(UP * 1.5)\nself.play(Create(ellipse), run_time=1.0)\nself.wait(0.1)","render":true}'
 
 # GET /sessions/<sessionId>/video downloads the full MP4 from the latest render.
 curl -sS -o /tmp/five-sections-full.mp4 \
@@ -110,6 +110,12 @@ curl -sS -o /tmp/five-sections-full.mp4 \
 
 Open returned `latestRender.fullVideoUrl`, or a section URL such as
 `/sessions/five-section-demo/sections/0001/video`, in a browser or video client.
+
+Cache modes for `append_section` with `render=true`, and for `render_scene`:
+
+- Omit `cache`, or set `"cache":"use"`: default; let Manim reuse cache.
+- `"cache":"flush"`: delete Manim partial movie cache before rendering.
+- `"cache":"disable"`: pass `--disable_caching` to Manim for that render.
 
 ## MCP endpoint
 
