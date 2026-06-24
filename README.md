@@ -3,8 +3,11 @@
   # manim-server
 
   FastAPI + MCP server for trusted Manim script rendering. (uses [Manim Community](https://www.manim.community/))
-
+  <video src="https://github.com/user-attachments/assets/9be7e5de-c89a-4c5a-9b6e-2852ae104acf" controls="controls" muted="muted" class="d-block rounded-bottom-2 border-top width-fit" style="max-height:480px; min-height: 200px">
+  </video>
 </div>
+
+
 
 ## Install
 
