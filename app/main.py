@@ -186,9 +186,8 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
     )
     def get_video(session_id: str):
         service.get_session(session_id)
-        return file_response(
-            root / "sessions" / session_id / "render" / "GeneratedScene.mp4"
-        )
+        render_dir = root / "sessions" / session_id / "render"
+        return file_response(render_dir / "GeneratedScene.mp4", render_dir)
 
     @app.get(
         "/sessions/{session_id}/sections/{section_id}/video",
@@ -203,9 +202,8 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
     )
     def get_section_video(session_id: str, section_id: str):
         service.get_session(session_id)
-        return file_response(
-            root / "sessions" / session_id / "render" / "sections" / f"{section_id}.mp4"
-        )
+        sections_dir = root / "sessions" / session_id / "render" / "sections"
+        return file_response(sections_dir / f"{section_id}.mp4", sections_dir)
 
     from app.mcp import mount_mcp
 
@@ -213,10 +211,12 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
     return app
 
 
-def file_response(path: Path) -> FileResponse:
-    if not path.exists():
+def file_response(path: Path, root: Path) -> FileResponse:
+    resolved_root = root.resolve()
+    resolved_path = path.resolve()
+    if not resolved_path.is_relative_to(resolved_root) or not resolved_path.exists():
         raise HTTPException(status_code=404, detail="artifact not found")
-    return FileResponse(path, media_type="video/mp4")
+    return FileResponse(resolved_path, media_type="video/mp4")
 
 
 app = create_app()
