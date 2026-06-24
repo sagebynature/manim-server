@@ -27,7 +27,7 @@ def test_renderer_copies_full_video_and_named_sections(tmp_path: Path, monkeypat
         nonlocal seen_command
         seen_command = command
         media_dir = Path(command[command.index("--media_dir") + 1])
-        output = media_dir / "videos" / "scene" / "480p15"
+        output = media_dir / "videos" / "scene" / "720p30"
         sections = output / "sections"
         sections.mkdir(parents=True)
         (output / "GeneratedScene.mp4").write_bytes(b"full")

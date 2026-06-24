@@ -71,10 +71,11 @@ class ManimRenderer:
         if completed.returncode != 0:
             raise RenderError((completed.stderr or completed.stdout or "Manim render failed").strip())
 
-        output_dir = media_dir / "videos" / "scene" / "480p15"
-        full_video = output_dir / "GeneratedScene.mp4"
-        if not full_video.exists():
-            raise RenderError(f"Manim did not produce expected video: {full_video}")
+        matches = sorted((media_dir / "videos" / "scene").glob("*/GeneratedScene.mp4"))
+        if not matches:
+            raise RenderError(f"Manim did not produce expected video under: {media_dir / 'videos' / 'scene'}")
+        full_video = matches[-1]
+        output_dir = full_video.parent
 
         shutil.copy2(full_video, render_dir / "GeneratedScene.mp4")
         sections = self._copy_sections(session_id, operations, output_dir / "sections", render_dir / "sections")

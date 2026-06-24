@@ -37,7 +37,7 @@ docker-build:
 
 docker-run:
 	mkdir -p $(DATA_DIR)
-	docker run --rm -p $(PORT):8000 -e DATA_DIR=/data -v "$(CURDIR)/$(DATA_DIR):/data" $(IMAGE)
+	docker run --name manim-server --rm -p $(PORT):8000 -e DATA_DIR=/data -e MANIM_CLI_FLAGS=$(MANIM_CLI_FLAGS) -v "$(CURDIR)/$(DATA_DIR):/data" $(IMAGE)
 
 docker-smoke: docker-build
 	docker rm -f $(CONTAINER) >/dev/null 2>&1 || true
