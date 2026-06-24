@@ -32,7 +32,8 @@ class TemplateStore:
         self.templates_dir = data_dir / "assets" / "session-templates"
 
     def resolve(self, template_id: str | None) -> TemplateAsset:
-        template_id = template_id if self._safe_id(template_id) else DEFAULT_TEMPLATE_ID
+        if template_id is None or not self._safe_id(template_id):
+            template_id = DEFAULT_TEMPLATE_ID
         path = self.templates_dir / f"{template_id}.py"
         if path.exists():
             return TemplateAsset(template_id, path.read_text(encoding="utf-8"))
