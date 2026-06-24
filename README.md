@@ -141,6 +141,13 @@ By default this is `./template/<templateId>.py`. Unknown missing templates
 fall back to `default.py`; if `default.py` is absent, session creation fails
 until the template directory is fixed.
 
+Bundled templates:
+
+- `default`: plain title header.
+- `clean-title`: title header with underline.
+- `dark-grid`: dark background with faint coordinate grid.
+- `presentation-card`: animated title card intro, then clears before sections.
+
 Template files are full Manim scripts, not scene-body snippets. Keep the scene
 class named `GeneratedScene`; Manim renders that class, and user sections are
 appended at EOF at the `construct()` body indentation. Do not put dedented code
