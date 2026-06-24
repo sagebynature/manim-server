@@ -1,7 +1,7 @@
 from fastapi.routing import Mount
 
 from app.main import create_app
-from app.mcp import create_tool_functions
+from app.mcp import create_mcp_server, create_tool_functions
 from app.models import RenderSummary
 from app.sessions import SessionService, SessionStore
 
@@ -26,3 +26,21 @@ def test_app_mounts_mcp_route(tmp_path):
 
     assert app.state.mcp is not None
     assert any(isinstance(route, Mount) and route.path == "/mcp" for route in app.routes)
+
+
+def test_mcp_tool_descriptions_guide_clients(tmp_path):
+    mcp = create_mcp_server(SessionService(SessionStore(tmp_path), FakeRenderer()))
+    tools = mcp._tool_manager._tools
+
+    assert "Start here" in tools["create_session"].description
+    assert "Use this before append_operation" in tools["create_session"].description
+
+    append_description = tools["append_operation"].description
+    assert "trusted Python Manim scene-body code" in append_description
+    assert "append one logical animation step" in append_description
+    assert "render=False" in append_description
+    assert "render=True" in append_description
+    assert "cache" in append_description
+    assert "use" in append_description
+    assert "refresh" in append_description
+    assert "disable" in append_description
