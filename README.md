@@ -124,6 +124,48 @@ Cache modes for `append_section` with `render=true`, and for `render_scene`:
 - `"cache":"flush"`: delete Manim partial movie cache before rendering.
 - `"cache":"disable"`: pass `--disable_caching` to Manim for that render.
 
+## Session templates
+
+`POST /sessions` accepts optional `templateId`:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8000/sessions \
+  -H 'content-type: application/json' \
+  -d '{"title":"Lecture","templateId":"lecture"}'
+```
+
+Template assets are Python files under
+`DATA_DIR/assets/session-templates/<templateId>.py`. Unknown or missing templates
+fall back to `default.py`; if `default.py` is absent, the server uses its
+built-in title-header template.
+
+Template files are full Manim scripts, not scene-body snippets. Keep the scene
+class named `GeneratedScene`; Manim renders that class, and user sections are
+appended at EOF at the `construct()` body indentation. Do not put dedented code
+after `construct()` that would close that append point.
+
+The reserved string literals `"__SESSION_ID__"`, `"__SESSION_TITLE__"`, and
+`"__TEMPLATE_ID__"` are replaced before render. Include them where the template
+needs those values:
+
+```python
+from manim import *
+from manim.opengl import *
+
+
+class GeneratedScene(Scene):
+    def construct(self):
+        # DO NOT EDIT: replaced by manim-server before render.
+        session_id = "__SESSION_ID__"
+        session_title = "__SESSION_TITLE__"
+        template_id = "__TEMPLATE_ID__"
+
+        title = Text(session_title or "Untitled").to_edge(UP)
+        self.add(title)
+
+        # user sections append here
+```
+
 ## MCP endpoint
 
 `http://127.0.0.1:8000/mcp`
