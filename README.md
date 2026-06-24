@@ -39,6 +39,28 @@ make run
 
 Default server: `http://127.0.0.1:8000`.
 
+## Docker
+
+Build the image:
+
+```bash
+make docker-build
+```
+
+Run it on `http://127.0.0.1:8000`:
+
+```bash
+make docker-run
+```
+
+Smoke-test the image:
+
+```bash
+make docker-smoke
+```
+
+The image is based on `manimcommunity/manim:v0.20.1`, matching the locked Manim dependency. That base image provides the Manim CLI plus common native rendering dependencies such as ffmpeg, Cairo/Pango, fonts, and minimal TeX Live. If a scene needs an extra TeX package, extend the image with that specific package instead of preinstalling all of TeX Live.
+
 ## REST flow
 
 ```bash
