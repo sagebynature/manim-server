@@ -79,28 +79,28 @@ curl -sS -X POST http://127.0.0.1:8000/sessions \
 # render=false records the code without invoking Manim yet.
 curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
   -H 'content-type: application/json' \
-  -d '{"title":"Create blue circle","code":"circle = Circle(color=BLUE)\nself.play(Create(circle), run_time=0.2)","render":false,"cache":"disable"}'
+  -d '{"title":"Create blue circle","code":"circle = Circle(color=BLUE)\nself.play(Create(circle), run_time=1.0)","render":false,"cache":"disable"}'
 
 # Another section. Sections run in append order inside the generated scene.
 curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
   -H 'content-type: application/json' \
-  -d '{"title":"Create green square","code":"square = Square(color=GREEN).shift(RIGHT * 2)\nself.play(Create(square), run_time=0.2)","render":false,"cache":"disable"}'
+  -d '{"title":"Create green square","code":"square = Square(color=GREEN).shift(RIGHT * 2)\nself.play(Create(square), run_time=1.0)","render":false,"cache":"disable"}'
 
 # Adds a third shape, still only updating the session JSON log.
 curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
   -H 'content-type: application/json' \
-  -d '{"title":"Create yellow triangle","code":"triangle = Triangle(color=YELLOW).shift(LEFT * 2)\nself.play(Create(triangle), run_time=0.2)","render":false,"cache":"disable"}'
+  -d '{"title":"Create yellow triangle","code":"triangle = Triangle(color=YELLOW).shift(LEFT * 2)\nself.play(Create(triangle), run_time=1.0)","render":false,"cache":"disable"}'
 
 # Adds a fourth animation section.
 curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
   -H 'content-type: application/json' \
-  -d '{"title":"Create lower line","code":"line = Line(LEFT, RIGHT, color=RED).shift(DOWN * 1.5)\nself.play(Create(line), run_time=0.2)","render":false,"cache":"disable"}'
+  -d '{"title":"Create lower line","code":"line = Line(LEFT, RIGHT, color=RED).shift(DOWN * 1.5)\nself.play(Create(line), run_time=1.0)","render":false,"cache":"disable"}'
 
 # Final section with render=true appends code, runs Manim, and returns latestRender
 # with fullVideoUrl plus per-section video URLs.
 curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
   -H 'content-type: application/json' \
-  -d '{"title":"Create purple ellipse","code":"ellipse = Ellipse(width=3, height=1.5, color=PURPLE).shift(UP * 1.5)\nself.play(Create(ellipse), run_time=0.2)\nself.wait(0.1)","render":true,"cache":"disable"}'
+  -d '{"title":"Create purple ellipse","code":"ellipse = Ellipse(width=3, height=1.5, color=PURPLE).shift(UP * 1.5)\nself.play(Create(ellipse), run_time=1.0)\nself.wait(0.1)","render":true,"cache":"disable"}'
 
 # GET /sessions/<sessionId>/video downloads the full MP4 from the latest render.
 curl -sS -o /tmp/five-sections-full.mp4 \
