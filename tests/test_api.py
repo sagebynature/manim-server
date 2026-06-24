@@ -3,9 +3,10 @@ import shutil
 from pathlib import Path
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from app.main import create_app
+from app.main import create_app, file_response
 from app.models import RenderSummary
 
 
@@ -163,6 +164,16 @@ class FakeRenderer:
         return RenderSummary(fullVideoUrl=f"/sessions/{session_id}/video", sections=[])
 
 
+def test_file_response_rejects_existing_file_outside_allowed_root(tmp_path: Path):
+    outside = tmp_path.parent / f"{tmp_path.name}-outside.mp4"
+    outside.write_bytes(b"mp4")
+
+    with pytest.raises(HTTPException) as exc:
+        file_response(outside, tmp_path)
+
+    assert exc.value.status_code == 404
+
+
 def test_session_append_render_and_video(tmp_path: Path):
     app = create_app(data_dir=tmp_path, renderer=FakeRenderer(tmp_path))
     client = TestClient(app)
@@ -179,6 +190,12 @@ def test_session_append_render_and_video(tmp_path: Path):
         == f"/sessions/{session_id}/video"
     )
     assert client.get(f"/sessions/{session_id}/video").content == b"mp4"
+    assert (
+        client.get(
+            f"/sessions/{session_id}/sections/..%2FGeneratedScene/video"
+        ).status_code
+        == 404
+    )
     assert client.get(f"/sessions/{session_id}").json()["sectionCount"] == 1
 
 

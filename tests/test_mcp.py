@@ -1,4 +1,5 @@
 from fastapi.routing import Mount
+from starlette.testclient import TestClient
 
 from app.main import create_app
 from app.mcp import create_mcp_server, create_tool_functions
@@ -57,6 +58,33 @@ def test_app_mounts_mcp_route(tmp_path):
     assert any(
         isinstance(route, Mount) and route.path == "/mcp" for route in app.routes
     )
+
+
+def test_mcp_http_endpoint_initializes_without_lifespan_error(tmp_path):
+    app = create_app(data_dir=tmp_path, renderer=FakeRenderer())
+
+    with TestClient(
+        app, base_url="http://127.0.0.1:3000", raise_server_exceptions=False
+    ) as client:
+        response = client.post(
+            "/mcp/",
+            headers={
+                "accept": "application/json, text/event-stream",
+                "content-type": "application/json",
+            },
+            json={
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-06-18",
+                    "capabilities": {},
+                    "clientInfo": {"name": "pytest", "version": "0"},
+                },
+            },
+        )
+
+    assert response.status_code == 200
 
 
 def test_mcp_tool_descriptions_guide_clients(tmp_path):
