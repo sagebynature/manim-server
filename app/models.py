@@ -12,6 +12,7 @@ class RenderCacheMode(StrEnum):
 
 class CreateSessionRequest(BaseModel):
     title: str | None = None
+    templateId: str | None = None
 
 
 class AppendSectionRequest(BaseModel):
@@ -51,6 +52,7 @@ class RenderSummary(BaseModel):
 class SessionDetail(BaseModel):
     sessionId: str
     title: str | None = None
+    templateId: str = "default"
     sectionCount: int
     sections: list[Section]
     latestRender: RenderSummary | None = None
@@ -59,6 +61,7 @@ class SessionDetail(BaseModel):
 class SessionSummary(BaseModel):
     sessionId: str
     title: str | None = None
+    templateId: str = "default"
     sectionCount: int
     latestRender: RenderSummary | None = None
 

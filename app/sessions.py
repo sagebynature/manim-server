@@ -12,6 +12,7 @@ from app.models import (
     SessionDetail,
     SessionSummary,
 )
+from app.templates import TemplateStore
 
 
 def now_iso() -> str:
@@ -59,20 +60,31 @@ class SessionStore:
 
 
 class SessionService:
-    def __init__(self, store: SessionStore, renderer=None):
+    def __init__(
+        self, store: SessionStore, renderer=None, templates: TemplateStore | None = None
+    ):
         self.store = store
         self.renderer = renderer
+        self.templates = templates or TemplateStore(store.data_dir)
 
     def create_session(
-        self, title: str | None, session_id: str | None = None
+        self,
+        title: str | None,
+        session_id: str | None = None,
+        template_id: str | None = None,
     ) -> SessionDetail:
         session_id = session_id or str(uuid4())
         if "/" in session_id or ".." in session_id:
             raise ValueError(f"invalid sessionId: {session_id}")
         if self.store.path(session_id).exists():
             raise ValueError(f"sessionId already exists: {session_id}")
+        template = self.templates.resolve(template_id)
         detail = SessionDetail(
-            sessionId=session_id, title=title, sectionCount=0, sections=[]
+            sessionId=session_id,
+            title=title,
+            templateId=template.templateId,
+            sectionCount=0,
+            sections=[],
         )
         self.store.save(detail)
         return detail

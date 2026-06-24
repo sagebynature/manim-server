@@ -1,5 +1,80 @@
-from app.models import RenderCacheMode, RenderSummary, SectionArtifact
+import json
+
+from app.models import RenderCacheMode, RenderSummary, SectionArtifact, SessionDetail
 from app.sessions import SessionService, SessionStore
+
+
+def test_create_session_defaults_to_default_template(tmp_path):
+    service = SessionService(SessionStore(tmp_path))
+
+    session = service.create_session("Demo")
+
+    assert session.templateId == "default"
+    assert service.get_session(session.sessionId).templateId == "default"
+
+
+def test_create_session_falls_back_to_default_when_template_missing(tmp_path):
+    service = SessionService(SessionStore(tmp_path))
+
+    session = service.create_session("Demo", template_id="missing-template")
+
+    assert session.templateId == "default"
+
+
+def test_create_session_uses_file_backed_template_id(tmp_path):
+    template_dir = tmp_path / "assets" / "session-templates"
+    template_dir.mkdir(parents=True)
+    (template_dir / "lecture.py").write_text(
+        'from manim import *\n\n'
+        'class GeneratedScene(Scene):\n'
+        '    def construct(self):\n'
+        '        session_id = "__SESSION_ID__"\n'
+        '        session_title = "__SESSION_TITLE__"\n'
+        '        template_id = "__TEMPLATE_ID__"\n',
+        encoding="utf-8",
+    )
+
+    service = SessionService(SessionStore(tmp_path))
+
+    session = service.create_session("Demo", template_id="lecture")
+
+    assert session.templateId == "lecture"
+
+
+def test_reset_preserves_template_id(tmp_path):
+    template_dir = tmp_path / "assets" / "session-templates"
+    template_dir.mkdir(parents=True)
+    (template_dir / "lecture.py").write_text("# valid enough resolution\n", encoding="utf-8")
+    service = SessionService(SessionStore(tmp_path))
+    session = service.create_session("Demo", template_id="lecture")
+    service.append_section(session.sessionId, "self.wait(1)")
+
+    reset = service.reset_session(session.sessionId)
+
+    assert reset.templateId == "lecture"
+    assert reset.sections == []
+
+
+def test_existing_session_json_without_template_id_loads_default(tmp_path):
+    session_dir = tmp_path / "sessions" / "legacy"
+    session_dir.mkdir(parents=True)
+    (session_dir / "session.json").write_text(
+        json.dumps(
+            {
+                "sessionId": "legacy",
+                "title": "Old",
+                "sectionCount": 0,
+                "sections": [],
+                "latestRender": None,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    loaded = SessionService(SessionStore(tmp_path)).get_session("legacy")
+
+    assert loaded.templateId == "default"
+    assert SessionDetail.model_validate_json((session_dir / "session.json").read_text()).templateId == "default"
 
 
 def test_session_store_persists_sections(tmp_path):
