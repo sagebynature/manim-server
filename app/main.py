@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from time import perf_counter
 
@@ -26,7 +27,13 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
     logging.basicConfig(
         level=logging.INFO, format="%(levelname)s %(name)s: %(message)s"
     )
-    app = FastAPI(title="manim-server")
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        async with app.state.mcp.session_manager.run():
+            yield
+
+    app = FastAPI(title="manim-server", lifespan=lifespan)
     route_logger = logging.getLogger("app.routes")
 
     @app.middleware("http")
