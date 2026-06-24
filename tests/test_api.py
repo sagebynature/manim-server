@@ -1,3 +1,4 @@
+import logging
 import shutil
 from pathlib import Path
 
@@ -13,6 +14,18 @@ def test_health_ready(tmp_path: Path):
 
     assert client.get("/health").json() == {"ok": True}
     assert client.get("/ready").json() == {"ok": True}
+
+
+
+
+def test_route_invocation_is_logged(tmp_path: Path, caplog):
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    with caplog.at_level(logging.INFO, logger="app.routes"):
+        response = client.get("/health")
+
+    assert response.status_code == 200
+    assert "route invoked method=GET path=/health status_code=200" in caplog.text
 
 
 def test_openapi_documents_request_and_response_payloads(tmp_path: Path):

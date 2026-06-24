@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from time import perf_counter
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
@@ -25,6 +26,32 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
         level=logging.INFO, format="%(levelname)s %(name)s: %(message)s"
     )
     app = FastAPI(title="manim-server")
+    route_logger = logging.getLogger("app.routes")
+
+    @app.middleware("http")
+    async def log_route_invocation(request, call_next):
+        start = perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            duration_ms = (perf_counter() - start) * 1000
+            route_logger.exception(
+                "route failed method=%s path=%s duration_ms=%.2f",
+                request.method,
+                request.url.path,
+                duration_ms,
+            )
+            raise
+        duration_ms = (perf_counter() - start) * 1000
+        route_logger.info(
+            "route invoked method=%s path=%s status_code=%s duration_ms=%.2f",
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+        )
+        return response
+
     settings = load_settings()
     root = (data_dir or settings.data_dir).resolve()
     service = SessionService(
