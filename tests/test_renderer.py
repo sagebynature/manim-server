@@ -8,8 +8,49 @@ from app.models import RenderCacheMode, Section
 from app.renderer import ManimRenderer, build_scene_script
 
 
+FULL_TEMPLATE = '''from manim import *
+from manim.opengl import *
+
+
+class GeneratedScene(Scene):
+    def construct(self):
+        session_id = "__SESSION_ID__"
+        session_title = "__SESSION_TITLE__"
+        template_id = "__TEMPLATE_ID__"
+
+        title = Text(session_title or "Untitled").to_edge(UP)
+        self.add(title)
+'''
+
+
 def op(section_id: str, code: str) -> Section:
     return Section(sectionId=section_id, code=code, createdAt="now")
+
+
+def test_build_scene_script_replaces_template_literals_and_appends_sections():
+    script = build_scene_script(
+        [op("0001", "self.wait(1)")],
+        template_code=FULL_TEMPLATE,
+        session_id="s1",
+        session_title='A "quoted" title',
+        template_id="lecture",
+    )
+
+    assert "session_id = 's1'" in script
+    assert 'session_title = \'A "quoted" title\'' in script
+    assert "template_id = 'lecture'" in script
+    assert "__SESSION_ID__" not in script
+    assert script.index("self.add(title)") < script.index("self.next_section('0001')")
+    assert script.rstrip().endswith("self.wait(1)")
+
+
+def test_build_scene_script_turns_missing_title_into_python_none():
+    script = build_scene_script(
+        [], template_code=FULL_TEMPLATE, session_id="s1", session_title=None
+    )
+
+    assert "session_title = None" in script
+    assert script.rstrip().endswith("self.wait(0.1)")
 
 
 def test_build_scene_script_adds_section_title_comment():

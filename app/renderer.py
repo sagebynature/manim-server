@@ -7,21 +7,28 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from app.models import Section, RenderCacheMode, RenderSummary, SectionArtifact
+from app.templates import DEFAULT_TEMPLATE_ID, DEFAULT_TEMPLATE_SCRIPT
 
 
 class RenderError(RuntimeError):
     pass
 
 
-def build_scene_script(sections: Sequence[Section]) -> str:
-    lines = [
-        "from manim import *",
-        "from manim.opengl import *",
-        "",
-        "",
-        "class GeneratedScene(Scene):",
-        "    def construct(self):",
-    ]
+def build_scene_script(
+    sections: Sequence[Section],
+    template_code: str = DEFAULT_TEMPLATE_SCRIPT,
+    session_id: str = "",
+    session_title: str | None = None,
+    template_id: str = DEFAULT_TEMPLATE_ID,
+) -> str:
+    script = (
+        template_code.replace('"__SESSION_ID__"', repr(session_id))
+        .replace('"__SESSION_TITLE__"', repr(session_title))
+        .replace('"__TEMPLATE_ID__"', repr(template_id))
+        .rstrip()
+    )
+    lines = script.splitlines()
+
     if not sections:
         lines.append("        self.wait(0.1)")
         return "\n".join(lines) + "\n"
@@ -36,8 +43,8 @@ def build_scene_script(sections: Sequence[Section]) -> str:
             f"        {line}" if line.strip() else ""
             for line in section.code.strip("\n").splitlines()
         )
-    return "\n".join(lines) + "\n"
 
+    return "\n".join(lines) + "\n"
 
 class ManimRenderer:
     def __init__(
@@ -60,7 +67,13 @@ class ManimRenderer:
         return self.session_dir(session_id) / "media"
 
     def render(
-        self, session_id: str, sections: list[Section], cache: RenderCacheMode
+        self,
+        session_id: str,
+        sections: list[Section],
+        cache: RenderCacheMode,
+        template_code: str = DEFAULT_TEMPLATE_SCRIPT,
+        session_title: str | None = None,
+        template_id: str = DEFAULT_TEMPLATE_ID,
     ) -> RenderSummary:
         session_dir = self.session_dir(session_id)
         media_dir = self.media_dir(session_id)
@@ -70,7 +83,16 @@ class ManimRenderer:
         media_dir.mkdir(parents=True, exist_ok=True)
         shutil.rmtree(render_dir, ignore_errors=True)
         render_dir.mkdir(parents=True, exist_ok=True)
-        scene_path.write_text(build_scene_script(sections), encoding="utf-8")
+        scene_path.write_text(
+            build_scene_script(
+                sections,
+                template_code=template_code,
+                session_id=session_id,
+                session_title=session_title,
+                template_id=template_id,
+            ),
+            encoding="utf-8",
+        )
 
         if cache == RenderCacheMode.FLUSH:
             shutil.rmtree(
