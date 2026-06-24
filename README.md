@@ -63,17 +63,53 @@ The image is based on `manimcommunity/manim:v0.20.1`, matching the locked Manim 
 
 ## REST flow
 
-```bash
-curl -s -X POST http://127.0.0.1:8000/sessions \
-  -H 'content-type: application/json' \
-  -d '{"title":"Demo"}'
+The example builds one session from five Manim snippets, renders the final scene,
+then downloads the MP4. Use `Manim-Session-ID` when you want a stable id; omit it
+to let the server generate one.
 
-curl -s -X POST http://127.0.0.1:8000/sessions/<sessionId>/section \
+```bash
+# POST /sessions creates a new scene session.
+# Response includes sessionId, title, sectionCount, and an empty section log.
+curl -sS -X POST http://127.0.0.1:8000/sessions \
   -H 'content-type: application/json' \
-  -d '{"code":"self.add(Circle())\nself.wait(0.5)","render":true}'
+  -H 'Manim-Session-ID: five-section-demo' \
+  -d '{"title":"Five animated sections curl smoke"}'
+
+# POST /sessions/<sessionId>/section appends one Manim code section.
+# render=false records the code without invoking Manim yet.
+curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
+  -H 'content-type: application/json' \
+  -d '{"title":"Create blue circle","code":"circle = Circle(color=BLUE)\nself.play(Create(circle), run_time=0.2)","render":false,"cache":"disable"}'
+
+# Another section. Sections run in append order inside the generated scene.
+curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
+  -H 'content-type: application/json' \
+  -d '{"title":"Create green square","code":"square = Square(color=GREEN).shift(RIGHT * 2)\nself.play(Create(square), run_time=0.2)","render":false,"cache":"disable"}'
+
+# Adds a third shape, still only updating the session JSON log.
+curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
+  -H 'content-type: application/json' \
+  -d '{"title":"Create yellow triangle","code":"triangle = Triangle(color=YELLOW).shift(LEFT * 2)\nself.play(Create(triangle), run_time=0.2)","render":false,"cache":"disable"}'
+
+# Adds a fourth animation section.
+curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
+  -H 'content-type: application/json' \
+  -d '{"title":"Create lower line","code":"line = Line(LEFT, RIGHT, color=RED).shift(DOWN * 1.5)\nself.play(Create(line), run_time=0.2)","render":false,"cache":"disable"}'
+
+# Final section with render=true appends code, runs Manim, and returns latestRender
+# with fullVideoUrl plus per-section video URLs.
+curl -sS -X POST http://127.0.0.1:8000/sessions/five-section-demo/section \
+  -H 'content-type: application/json' \
+  -d '{"title":"Create purple ellipse","code":"ellipse = Ellipse(width=3, height=1.5, color=PURPLE).shift(UP * 1.5)\nself.play(Create(ellipse), run_time=0.2)\nself.wait(0.1)","render":true,"cache":"disable"}'
+
+# GET /sessions/<sessionId>/video downloads the full MP4 from the latest render.
+curl -sS -o /tmp/five-sections-full.mp4 \
+  -w 'status=%{http_code} content_type=%{content_type} bytes=%{size_download}\n' \
+  http://127.0.0.1:8000/sessions/five-section-demo/video
 ```
 
-Open returned `latestRender.fullVideoUrl`, or a section URL such as `/sessions/<sessionId>/sections/0001/video`, in a browser or video client.
+Open returned `latestRender.fullVideoUrl`, or a section URL such as
+`/sessions/five-section-demo/sections/0001/video`, in a browser or video client.
 
 ## MCP endpoint
 

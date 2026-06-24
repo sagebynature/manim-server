@@ -9,10 +9,10 @@ class EndpointDoc(NamedTuple):
 DOCS: dict[str, EndpointDoc] = {
     "create_session": EndpointDoc(
         "Create session",
-        "Start here: create a new Manim scene session. Use this before append_section "
-        "or render_scene when building a new animation. Optional title labels the "
-        "session in later list/get calls. Returns sessionId, title, section count, "
-        "and render metadata.",
+        "Start here: create new Manim scene session. Use this before append_section "
+        "or render_scene building new animation. Optional title labels "
+        "session in later list/get calls. Manim-Session-ID header or "
+        "sessionId cookie may set the session id. Returns sessionId, title, section count, and render metadata.",
     ),
     "list_sessions": EndpointDoc(
         "List sessions",

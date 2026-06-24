@@ -17,7 +17,9 @@ def test_mcp_tools_call_shared_service(tmp_path):
     )
 
     session = tools["create_session"]("Demo")
-    appended = tools["append_section"](session["sessionId"], "self.wait(1)", render=True)
+    appended = tools["append_section"](
+        session["sessionId"], "self.wait(1)", render=True
+    )
 
     assert (
         appended["latestRender"]["fullVideoUrl"]

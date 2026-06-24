@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from time import perf_counter
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Cookie, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 
 from app.config import load_settings
@@ -80,8 +80,15 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
         summary=DOCS["create_session"].summary,
         description=DOCS["create_session"].description,
     )
-    def create_session(body: CreateSessionRequest):
-        return service.create_session(body.title)
+    def create_session(
+        body: CreateSessionRequest,
+        sessionId: str | None = Cookie(None),
+        manim_session_id: str | None = Header(None, alias="Manim-Session-ID"),
+    ):
+        try:
+            return service.create_session(body.title, manim_session_id or sessionId)
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     @app.get(
         "/sessions",
@@ -193,12 +200,7 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
     def get_section_video(session_id: str, section_id: str):
         service.get_session(session_id)
         return file_response(
-            root
-            / "sessions"
-            / session_id
-            / "render"
-            / "sections"
-            / f"{section_id}.mp4"
+            root / "sessions" / session_id / "render" / "sections" / f"{section_id}.mp4"
         )
 
     from app.mcp import mount_mcp

@@ -12,14 +12,19 @@ def op(section_id: str, code: str) -> Section:
     return Section(sectionId=section_id, code=code, createdAt="now")
 
 
-
-
 def test_build_scene_script_adds_section_title_comment():
     script = build_scene_script(
-        [Section(sectionId="0001", title="Intro", code="self.wait(0.1)", createdAt="now")]
+        [
+            Section(
+                sectionId="0001", title="Intro", code="self.wait(0.1)", createdAt="now"
+            )
+        ]
     )
 
-    assert "        # Intro\n        self.next_section('0001')\n        self.wait(0.1)" in script
+    assert (
+        "        # Intro\n        self.next_section('0001')\n        self.wait(0.1)"
+        in script
+    )
 
 
 def test_build_scene_script_names_sections_before_sections():
@@ -63,9 +68,7 @@ def test_renderer_copies_full_video_and_named_sections(tmp_path: Path, monkeypat
     stale.parent.mkdir(parents=True)
     stale.write_bytes(b"stale")
 
-    summary = renderer.render(
-        "s1", [op("0001", "self.wait(1)")], RenderCacheMode.USE
-    )
+    summary = renderer.render("s1", [op("0001", "self.wait(1)")], RenderCacheMode.USE)
 
     assert seen_command is not None
     assert seen_command[:6] == [

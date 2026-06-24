@@ -16,8 +16,6 @@ def test_health_ready(tmp_path: Path):
     assert client.get("/ready").json() == {"ok": True}
 
 
-
-
 def test_route_invocation_is_logged(tmp_path: Path, caplog):
     client = TestClient(create_app(data_dir=tmp_path))
 
@@ -26,8 +24,6 @@ def test_route_invocation_is_logged(tmp_path: Path, caplog):
 
     assert response.status_code == 200
     assert "route invoked method=GET path=/health status_code=200" in caplog.text
-
-
 
 
 def test_append_section_uses_section_route_numeric_id_and_title(tmp_path: Path):
@@ -45,9 +41,26 @@ def test_append_section_uses_section_route_numeric_id_and_title(tmp_path: Path):
     assert body["section"]["title"] == "Intro"
     assert "operation" not in body
     assert "operationId" not in body["section"]
-    assert client.post(
-        f"/sessions/{session_id}/operations", json={"code": "self.wait(0.1)"}
-    ).status_code == 404
+    assert (
+        client.post(
+            f"/sessions/{session_id}/operations", json={"code": "self.wait(0.1)"}
+        ).status_code
+        == 404
+    )
+
+
+def test_create_session_accepts_manim_session_id_header(tmp_path: Path):
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.post(
+        "/sessions",
+        json={"title": "Header session"},
+        headers={"Manim-Session-ID": "browser-session-1"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["sessionId"] == "browser-session-1"
+    assert client.get("/sessions/browser-session-1").json()["title"] == "Header session"
 
 
 def test_openapi_documents_request_and_response_payloads(tmp_path: Path):
@@ -101,9 +114,9 @@ def test_openapi_documents_request_and_response_payloads(tmp_path: Path):
     assert schema["paths"]["/sessions/{session_id}/video"]["get"]["responses"]["200"][
         "content"
     ]["video/mp4"]["schema"] == {"type": "string", "format": "binary"}
-    assert schema["paths"]["/sessions/{session_id}/sections/{section_id}/video"][
-        "get"
-    ]["responses"]["200"]["content"]["video/mp4"]["schema"] == {
+    assert schema["paths"]["/sessions/{session_id}/sections/{section_id}/video"]["get"][
+        "responses"
+    ]["200"]["content"]["video/mp4"]["schema"] == {
         "type": "string",
         "format": "binary",
     }

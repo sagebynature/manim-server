@@ -63,9 +63,16 @@ class SessionService:
         self.store = store
         self.renderer = renderer
 
-    def create_session(self, title: str | None) -> SessionDetail:
+    def create_session(
+        self, title: str | None, session_id: str | None = None
+    ) -> SessionDetail:
+        session_id = session_id or str(uuid4())
+        if "/" in session_id or ".." in session_id:
+            raise ValueError(f"invalid sessionId: {session_id}")
+        if self.store.path(session_id).exists():
+            raise ValueError(f"sessionId already exists: {session_id}")
         detail = SessionDetail(
-            sessionId=str(uuid4()), title=title, sectionCount=0, sections=[]
+            sessionId=session_id, title=title, sectionCount=0, sections=[]
         )
         self.store.save(detail)
         return detail
@@ -85,7 +92,9 @@ class SessionService:
         self.store.delete(session_id)
         return {"ok": True}
 
-    def append_section(self, session_id: str, code: str, title: str | None = None) -> Section:
+    def append_section(
+        self, session_id: str, code: str, title: str | None = None
+    ) -> Section:
         if not code.strip():
             raise ValueError("section code is empty")
         detail = self.store.load(session_id)
