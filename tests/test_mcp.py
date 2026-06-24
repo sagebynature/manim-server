@@ -7,7 +7,7 @@ from app.sessions import SessionService, SessionStore
 
 
 class FakeRenderer:
-    def render(self, session_id, operations, cache):
+    def render(self, session_id, sections, cache):
         return RenderSummary(fullVideoUrl=f"/sessions/{session_id}/video", sections=[])
 
 
@@ -17,13 +17,13 @@ def test_mcp_tools_call_shared_service(tmp_path):
     )
 
     session = tools["create_session"]("Demo")
-    appended = tools["append_operation"](session["sessionId"], "self.wait(1)", True)
+    appended = tools["append_section"](session["sessionId"], "self.wait(1)", render=True)
 
     assert (
         appended["latestRender"]["fullVideoUrl"]
         == f"/sessions/{session['sessionId']}/video"
     )
-    assert tools["get_session"](session["sessionId"])["operationCount"] == 1
+    assert tools["get_session"](session["sessionId"])["sectionCount"] == 1
 
 
 def test_app_mounts_mcp_route(tmp_path):
@@ -40,9 +40,9 @@ def test_mcp_tool_descriptions_guide_clients(tmp_path):
     tools = mcp._tool_manager._tools
 
     assert "Start here" in tools["create_session"].description
-    assert "Use this before append_operation" in tools["create_session"].description
+    assert "Use this before append_section" in tools["create_session"].description
 
-    append_description = tools["append_operation"].description
+    append_description = tools["append_section"].description
     assert "trusted Python Manim scene-body code" in append_description
     assert "append one logical animation step" in append_description
     assert "render=False" in append_description

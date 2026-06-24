@@ -25,16 +25,20 @@ def create_tool_functions(service: SessionService):
     def close_session(session_id: str):
         return service.close_session(session_id)
 
-    def append_operation(
-        session_id: str, code: str, render: bool = False, cache: str = "use"
+    def append_section(
+        session_id: str,
+        code: str,
+        title: str | None = None,
+        render: bool = False,
+        cache: str = "use",
     ):
-        operation = service.append_operation(session_id, code)
+        section = service.append_section(session_id, code, title)
         latest = (
             service.render_scene(session_id, RenderCacheMode(cache)) if render else None
         )
         return {
             "sessionId": session_id,
-            "operation": dump(operation),
+            "section": dump(section),
             "latestRender": dump(latest) if latest else None,
         }
 
@@ -49,7 +53,7 @@ def create_tool_functions(service: SessionService):
         "list_sessions": list_sessions,
         "get_session": get_session,
         "close_session": close_session,
-        "append_operation": append_operation,
+        "append_section": append_section,
         "render_scene": render_scene,
         "reset_session": reset_session,
     }
@@ -75,11 +79,15 @@ def create_mcp_server(service: SessionService) -> FastMCP:
     def close_session(sessionId: str) -> dict[str, bool]:
         return tools["close_session"](sessionId)
 
-    @mcp.tool(description=DOCS["append_operation"].description)
-    def append_operation(
-        sessionId: str, code: str, render: bool = False, cache: str = "use"
+    @mcp.tool(description=DOCS["append_section"].description)
+    def append_section(
+        sessionId: str,
+        code: str,
+        title: str | None = None,
+        render: bool = False,
+        cache: str = "use",
     ) -> dict[str, Any]:
-        return tools["append_operation"](sessionId, code, render, cache)
+        return tools["append_section"](sessionId, code, title, render, cache)
 
     @mcp.tool(description=DOCS["render_scene"].description)
     def render_scene(sessionId: str, cache: str = "use") -> dict[str, Any]:

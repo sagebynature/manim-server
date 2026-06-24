@@ -28,6 +28,28 @@ def test_route_invocation_is_logged(tmp_path: Path, caplog):
     assert "route invoked method=GET path=/health status_code=200" in caplog.text
 
 
+
+
+def test_append_section_uses_section_route_numeric_id_and_title(tmp_path: Path):
+    client = TestClient(create_app(data_dir=tmp_path))
+    session_id = client.post("/sessions", json={"title": "Demo"}).json()["sessionId"]
+
+    response = client.post(
+        f"/sessions/{session_id}/section",
+        json={"title": "Intro", "code": "self.wait(0.1)"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["section"]["sectionId"] == "0001"
+    assert body["section"]["title"] == "Intro"
+    assert "operation" not in body
+    assert "operationId" not in body["section"]
+    assert client.post(
+        f"/sessions/{session_id}/operations", json={"code": "self.wait(0.1)"}
+    ).status_code == 404
+
+
 def test_openapi_documents_request_and_response_payloads(tmp_path: Path):
     app = create_app(data_dir=tmp_path)
     schema = app.openapi()
@@ -42,7 +64,7 @@ def test_openapi_documents_request_and_response_payloads(tmp_path: Path):
         ("list_sessions", "get", "/sessions"),
         ("get_session", "get", "/sessions/{session_id}"),
         ("close_session", "delete", "/sessions/{session_id}"),
-        ("append_operation", "post", "/sessions/{session_id}/operations"),
+        ("append_section", "post", "/sessions/{session_id}/section"),
         ("render_scene", "post", "/sessions/{session_id}/render"),
         ("reset_session", "post", "/sessions/{session_id}/reset"),
     ]
@@ -67,8 +89,8 @@ def test_openapi_documents_request_and_response_payloads(tmp_path: Path):
     assert json_schema("delete", "/sessions/{session_id}") == {
         "$ref": "#/components/schemas/OkResponse"
     }
-    assert json_schema("post", "/sessions/{session_id}/operations") == {
-        "$ref": "#/components/schemas/AppendOperationResponse"
+    assert json_schema("post", "/sessions/{session_id}/section") == {
+        "$ref": "#/components/schemas/AppendSectionResponse"
     }
     assert json_schema("post", "/sessions/{session_id}/render") == {
         "$ref": "#/components/schemas/RenderSummary"
@@ -79,7 +101,7 @@ def test_openapi_documents_request_and_response_payloads(tmp_path: Path):
     assert schema["paths"]["/sessions/{session_id}/video"]["get"]["responses"]["200"][
         "content"
     ]["video/mp4"]["schema"] == {"type": "string", "format": "binary"}
-    assert schema["paths"]["/sessions/{session_id}/sections/{operation_id}/video"][
+    assert schema["paths"]["/sessions/{session_id}/sections/{section_id}/video"][
         "get"
     ]["responses"]["200"]["content"]["video/mp4"]["schema"] == {
         "type": "string",
@@ -91,7 +113,7 @@ class FakeRenderer:
     def __init__(self, data_dir: Path):
         self.data_dir = data_dir
 
-    def render(self, session_id, operations, cache):
+    def render(self, session_id, sections, cache):
         render_dir = self.data_dir / "sessions" / session_id / "render"
         render_dir.mkdir(parents=True, exist_ok=True)
         (render_dir / "GeneratedScene.mp4").write_bytes(b"mp4")
@@ -104,7 +126,7 @@ def test_session_append_render_and_video(tmp_path: Path):
 
     session_id = client.post("/sessions", json={"title": "Demo"}).json()["sessionId"]
     response = client.post(
-        f"/sessions/{session_id}/operations",
+        f"/sessions/{session_id}/section",
         json={"code": "self.wait(1)", "render": True},
     )
 
@@ -114,7 +136,7 @@ def test_session_append_render_and_video(tmp_path: Path):
         == f"/sessions/{session_id}/video"
     )
     assert client.get(f"/sessions/{session_id}/video").content == b"mp4"
-    assert client.get(f"/sessions/{session_id}").json()["operationCount"] == 1
+    assert client.get(f"/sessions/{session_id}").json()["sectionCount"] == 1
 
 
 def test_missing_session_returns_404(tmp_path: Path):
@@ -140,7 +162,7 @@ def test_api_real_manim_render_smoke(tmp_path: Path):
     session_id = client.post("/sessions", json={"title": "Smoke"}).json()["sessionId"]
 
     response = client.post(
-        f"/sessions/{session_id}/operations",
+        f"/sessions/{session_id}/section",
         json={
             "code": "self.add(Circle())\nself.wait(0.1)",
             "render": True,

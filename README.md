@@ -68,18 +68,18 @@ curl -s -X POST http://127.0.0.1:8000/sessions \
   -H 'content-type: application/json' \
   -d '{"title":"Demo"}'
 
-curl -s -X POST http://127.0.0.1:8000/sessions/<sessionId>/operations \
+curl -s -X POST http://127.0.0.1:8000/sessions/<sessionId>/section \
   -H 'content-type: application/json' \
   -d '{"code":"self.add(Circle())\nself.wait(0.5)","render":true}'
 ```
 
-Open returned `latestRender.fullVideoUrl`, or a section URL such as `/sessions/<sessionId>/sections/op-0001/video`, in a browser or video client.
+Open returned `latestRender.fullVideoUrl`, or a section URL such as `/sessions/<sessionId>/sections/0001/video`, in a browser or video client.
 
 ## MCP endpoint
 
 `http://127.0.0.1:8000/mcp`
 
-Tools mirror REST: `create_session`, `list_sessions`, `get_session`, `close_session`, `append_operation`, `render_scene`, `reset_session`.
+Tools mirror REST: `create_session`, `list_sessions`, `get_session`, `close_session`, `append_section`, `render_scene`, `reset_session`.
 
 ## Security
 

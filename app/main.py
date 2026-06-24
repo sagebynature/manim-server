@@ -8,8 +8,8 @@ from fastapi.responses import FileResponse
 from app.config import load_settings
 from app.docs import DOCS
 from app.models import (
-    AppendOperationRequest,
-    AppendOperationResponse,
+    AppendSectionRequest,
+    AppendSectionResponse,
     CreateSessionRequest,
     ListSessionsResponse,
     OkResponse,
@@ -117,19 +117,19 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     @app.post(
-        "/sessions/{session_id}/operations",
-        response_model=AppendOperationResponse,
-        summary=DOCS["append_operation"].summary,
-        description=DOCS["append_operation"].description,
+        "/sessions/{session_id}/section",
+        response_model=AppendSectionResponse,
+        summary=DOCS["append_section"].summary,
+        description=DOCS["append_section"].description,
     )
-    def append_operation(session_id: str, body: AppendOperationRequest):
+    def append_section(session_id: str, body: AppendSectionRequest):
         try:
-            operation = service.append_operation(session_id, body.code)
+            section = service.append_section(session_id, body.code, body.title)
             latest = (
                 service.render_scene(session_id, body.cache) if body.render else None
             )
-            return AppendOperationResponse(
-                sessionId=session_id, operation=operation, latestRender=latest
+            return AppendSectionResponse(
+                sessionId=session_id, section=section, latestRender=latest
             )
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -180,7 +180,7 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
         )
 
     @app.get(
-        "/sessions/{session_id}/sections/{operation_id}/video",
+        "/sessions/{session_id}/sections/{section_id}/video",
         response_class=FileResponse,
         responses={
             200: {
@@ -190,7 +190,7 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
             }
         },
     )
-    def get_section_video(session_id: str, operation_id: str):
+    def get_section_video(session_id: str, section_id: str):
         service.get_session(session_id)
         return file_response(
             root
@@ -198,7 +198,7 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
             / session_id
             / "render"
             / "sections"
-            / f"{operation_id}.mp4"
+            / f"{section_id}.mp4"
         )
 
     from app.mcp import mount_mcp

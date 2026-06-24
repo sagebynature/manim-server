@@ -6,7 +6,7 @@ from threading import Lock
 from uuid import uuid4
 
 from app.models import (
-    Operation,
+    Section,
     RenderCacheMode,
     RenderSummary,
     SessionDetail,
@@ -65,7 +65,7 @@ class SessionService:
 
     def create_session(self, title: str | None) -> SessionDetail:
         detail = SessionDetail(
-            sessionId=str(uuid4()), title=title, operationCount=0, operations=[]
+            sessionId=str(uuid4()), title=title, sectionCount=0, sections=[]
         )
         self.store.save(detail)
         return detail
@@ -73,7 +73,7 @@ class SessionService:
     def list_sessions(self) -> list[SessionSummary]:
         return [
             SessionSummary(
-                **self.store.load(session_id).model_dump(exclude={"operations"})
+                **self.store.load(session_id).model_dump(exclude={"sections"})
             )
             for session_id in self.store.list_ids()
         ]
@@ -85,27 +85,27 @@ class SessionService:
         self.store.delete(session_id)
         return {"ok": True}
 
-    def append_operation(self, session_id: str, code: str) -> Operation:
+    def append_section(self, session_id: str, code: str, title: str | None = None) -> Section:
         if not code.strip():
-            raise ValueError("operation code is empty")
+            raise ValueError("section code is empty")
         detail = self.store.load(session_id)
-        number = len(detail.operations) + 1
-        operation = Operation(
-            operationId=f"op-{number:04d}",
-            sectionName=f"op-{number:04d}",
+        number = len(detail.sections) + 1
+        section = Section(
+            sectionId=f"{number:04d}",
+            title=title,
             code=code,
             createdAt=now_iso(),
         )
-        detail.operations.append(operation)
-        detail.operationCount = len(detail.operations)
+        detail.sections.append(section)
+        detail.sectionCount = len(detail.sections)
         detail.latestRender = None
         self.store.save(detail)
-        return operation
+        return section
 
     def reset_session(self, session_id: str) -> SessionDetail:
         detail = self.store.load(session_id)
-        detail.operations = []
-        detail.operationCount = 0
+        detail.sections = []
+        detail.sectionCount = 0
         detail.latestRender = None
         self.store.save(detail)
         return detail
@@ -114,7 +114,7 @@ class SessionService:
         if self.renderer is None:
             raise RuntimeError("renderer is not configured")
         detail = self.store.load(session_id)
-        summary = self.renderer.render(detail.sessionId, detail.operations, cache)
+        summary = self.renderer.render(detail.sessionId, detail.sections, cache)
         detail.latestRender = summary
         self.store.save(detail)
         return summary

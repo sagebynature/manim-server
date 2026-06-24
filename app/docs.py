@@ -9,22 +9,22 @@ class EndpointDoc(NamedTuple):
 DOCS: dict[str, EndpointDoc] = {
     "create_session": EndpointDoc(
         "Create session",
-        "Start here: create a new Manim scene session. Use this before append_operation "
+        "Start here: create a new Manim scene session. Use this before append_section "
         "or render_scene when building a new animation. Optional title labels the "
-        "session in later list/get calls. Returns sessionId, title, operation count, "
+        "session in later list/get calls. Returns sessionId, title, section count, "
         "and render metadata.",
     ),
     "list_sessions": EndpointDoc(
         "List sessions",
         "List existing Manim scene sessions. Use to find prior sessionId values "
-        "before get_session, append_operation, render_scene, reset_session, or "
+        "before get_session, append_section, render_scene, reset_session, or "
         "close_session. Returns summary metadata only; call get_session for the "
-        "full operation log.",
+        "full section log.",
     ),
     "get_session": EndpointDoc(
         "Get session",
         "Get one Manim session by sessionId. Use after create_session or "
-        "list_sessions to inspect the current operation log, render status, and "
+        "list_sessions to inspect the current section log, render status, and "
         "generated media URLs before deciding whether to append, render, reset, "
         "or close the session.",
     ),
@@ -35,30 +35,30 @@ DOCS: dict[str, EndpointDoc] = {
         "Returns whether the session closed; closed sessions cannot be appended "
         "or rendered.",
     ),
-    "append_operation": EndpointDoc(
-        "Append operation",
+    "append_section": EndpointDoc(
+        "Append section",
         "Use tool append one logical animation step to an existing Manim session. "
         "The code parameter is trusted Python Manim scene-body code, written as "
-        "statements run inside the current Scene construct method. Operations are "
+        "statements run inside the current Scene construct method. Sections are "
         "appended in order, so use this for incremental scene construction after "
         "create_session. Prefer render=False while batching multiple small edits; "
         "use render=True when the client needs an immediate video update after the "
         "append. cache controls rendering when render=True: use reuses existing "
         "Manim cache, refresh rerenders with cache refresh, disable renders without "
-        "cache. Returns the appended operation and latestRender only when render=True.",
+        "cache. Returns the appended section and latestRender only when render=True.",
     ),
     "render_scene": EndpointDoc(
         "Render scene",
         "Render an existing Manim session synchronously. Use after one or more "
-        "append_operation calls with render=False when the client needs a fresh "
+        "append_section calls with render=False when the client needs a fresh "
         "video URL. cache may be use, refresh, or disable. Returns the full video "
         "URL and section metadata.",
     ),
     "reset_session": EndpointDoc(
         "Reset session",
-        "Reset an existing Manim session operation log. Use to keep the same "
-        "sessionId but remove all appended Manim operations before rebuilding the "
-        "scene. This does not create a new session; call append_operation next with "
+        "Reset an existing Manim session section log. Use to keep the same "
+        "sessionId but remove all appended Manim sections before rebuilding the "
+        "scene. This does not create a new session; call append_section next with "
         "replacement scene-body code.",
     ),
 }
