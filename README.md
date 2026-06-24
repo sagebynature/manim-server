@@ -1,6 +1,10 @@
-# manim-server
+<div align="center">
 
-FastAPI + MCP server for trusted Manim script rendering. (uses [Manim Community](https://www.manim.community/))
+  # manim-server
+
+  FastAPI + MCP server for trusted Manim script rendering. (uses [Manim Community](https://www.manim.community/))
+
+</div>
 
 ## Install
 
