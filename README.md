@@ -123,6 +123,11 @@ Cache modes for `append_section` with `render=true`, and for `render_scene`:
 
 Tools mirror REST: `create_session`, `list_sessions`, `get_session`, `close_session`, `append_section`, `render_scene`, `reset_session`.
 
+## Thanks
+
+Special thanks to the [Manim Community](https://www.manim.community/) and
+[3Blue1Brown](https://github.com/3b1b) for their amazing work and inspiration.
+
 ## Security
 
 Scene code is trusted Python. Do not expose this server to untrusted users or networks.
