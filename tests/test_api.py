@@ -15,6 +15,35 @@ def test_health_ready(tmp_path: Path):
     assert client.get("/ready").json() == {"ok": True}
 
 
+def test_openapi_documents_request_and_response_payloads(tmp_path: Path):
+    schema = create_app(data_dir=tmp_path).openapi()
+
+    def json_schema(method: str, path: str, status: str = "200") -> dict:
+        return schema["paths"][path][method]["responses"][status]["content"]["application/json"]["schema"]
+
+    assert json_schema("get", "/health") == {"$ref": "#/components/schemas/OkResponse"}
+    assert json_schema("get", "/ready") == {"$ref": "#/components/schemas/OkResponse"}
+    assert json_schema("post", "/sessions") == {"$ref": "#/components/schemas/SessionDetail"}
+    assert json_schema("get", "/sessions") == {"$ref": "#/components/schemas/ListSessionsResponse"}
+    assert json_schema("get", "/sessions/{session_id}") == {"$ref": "#/components/schemas/SessionDetail"}
+    assert json_schema("delete", "/sessions/{session_id}") == {"$ref": "#/components/schemas/OkResponse"}
+    assert json_schema("post", "/sessions/{session_id}/operations") == {
+        "$ref": "#/components/schemas/AppendOperationResponse"
+    }
+    assert json_schema("post", "/sessions/{session_id}/render") == {"$ref": "#/components/schemas/RenderSummary"}
+    assert json_schema("post", "/sessions/{session_id}/reset") == {"$ref": "#/components/schemas/SessionDetail"}
+    assert (
+        schema["paths"]["/sessions/{session_id}/video"]["get"]["responses"]["200"]["content"]["video/mp4"]["schema"]
+        == {"type": "string", "format": "binary"}
+    )
+    assert (
+        schema["paths"]["/sessions/{session_id}/sections/{operation_id}/video"]["get"]["responses"]["200"]["content"][
+            "video/mp4"
+        ]["schema"]
+        == {"type": "string", "format": "binary"}
+    )
+
+
 class FakeRenderer:
     def __init__(self, data_dir: Path):
         self.data_dir = data_dir

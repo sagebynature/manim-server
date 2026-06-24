@@ -24,6 +24,10 @@ class RenderRequest(BaseModel):
     cache: RenderCacheMode = RenderCacheMode.USE
 
 
+class OkResponse(BaseModel):
+    ok: bool
+
+
 class Operation(BaseModel):
     operationId: str
     sectionName: str
@@ -56,6 +60,10 @@ class SessionSummary(BaseModel):
     title: str | None = None
     operationCount: int
     latestRender: RenderSummary | None = None
+
+
+class ListSessionsResponse(BaseModel):
+    sessions: list[SessionSummary]
 
 
 class AppendOperationResponse(BaseModel):

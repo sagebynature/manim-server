@@ -5,7 +5,16 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 
 from app.config import load_settings
-from app.models import AppendOperationRequest, AppendOperationResponse, CreateSessionRequest, RenderRequest
+from app.models import (
+    AppendOperationRequest,
+    AppendOperationResponse,
+    CreateSessionRequest,
+    ListSessionsResponse,
+    OkResponse,
+    RenderRequest,
+    RenderSummary,
+    SessionDetail,
+)
 from app.renderer import ManimRenderer
 from app.sessions import SessionService, SessionStore
 
@@ -27,37 +36,37 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
     app.state.service = service
     app.state.data_dir = root
 
-    @app.get("/health")
+    @app.get("/health", response_model=OkResponse)
     def health() -> dict[str, bool]:
         return {"ok": True}
 
-    @app.get("/ready")
+    @app.get("/ready", response_model=OkResponse)
     def ready() -> dict[str, bool]:
         return {"ok": True}
 
-    @app.post("/sessions")
+    @app.post("/sessions", response_model=SessionDetail)
     def create_session(body: CreateSessionRequest):
         return service.create_session(body.title)
 
-    @app.get("/sessions")
+    @app.get("/sessions", response_model=ListSessionsResponse)
     def list_sessions():
         return {"sessions": service.list_sessions()}
 
-    @app.get("/sessions/{session_id}")
+    @app.get("/sessions/{session_id}", response_model=SessionDetail)
     def get_session(session_id: str):
         try:
             return service.get_session(session_id)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    @app.delete("/sessions/{session_id}")
+    @app.delete("/sessions/{session_id}", response_model=OkResponse)
     def close_session(session_id: str):
         try:
             return service.close_session(session_id)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    @app.post("/sessions/{session_id}/operations")
+    @app.post("/sessions/{session_id}/operations", response_model=AppendOperationResponse)
     def append_operation(session_id: str, body: AppendOperationRequest):
         try:
             operation = service.append_operation(session_id, body.code)
@@ -68,7 +77,7 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    @app.post("/sessions/{session_id}/render")
+    @app.post("/sessions/{session_id}/render", response_model=RenderSummary)
     def render_scene(session_id: str, body: RenderRequest):
         try:
             return service.render_scene(session_id, body.cache)
@@ -77,19 +86,27 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
         except RuntimeError as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    @app.post("/sessions/{session_id}/reset")
+    @app.post("/sessions/{session_id}/reset", response_model=SessionDetail)
     def reset_session(session_id: str):
         try:
             return service.reset_session(session_id)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    @app.get("/sessions/{session_id}/video")
+    @app.get(
+        "/sessions/{session_id}/video",
+        response_class=FileResponse,
+        responses={200: {"content": {"video/mp4": {"schema": {"type": "string", "format": "binary"}}}}},
+    )
     def get_video(session_id: str):
         service.get_session(session_id)
         return file_response(root / "sessions" / session_id / "render" / "GeneratedScene.mp4")
 
-    @app.get("/sessions/{session_id}/sections/{operation_id}/video")
+    @app.get(
+        "/sessions/{session_id}/sections/{operation_id}/video",
+        response_class=FileResponse,
+        responses={200: {"content": {"video/mp4": {"schema": {"type": "string", "format": "binary"}}}}},
+    )
     def get_section_video(session_id: str, operation_id: str):
         service.get_session(session_id)
         return file_response(root / "sessions" / session_id / "render" / "sections" / f"{operation_id}.mp4")
