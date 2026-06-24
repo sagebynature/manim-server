@@ -2,7 +2,7 @@
 
 ## Goal
 
-Add session templates: named file-backed assets that inject boilerplate Manim scene-body Python before any user section runs. The first built-in/default template always adds a title header.
+Add session templates: named file-backed Manim Python script assets. A template is a full generated scene script that can include imports, `GeneratedScene`, `construct()`, and boilerplate before user sections. The default template adds a title header.
 
 ## Scope
 
@@ -10,21 +10,36 @@ Add session templates: named file-backed assets that inject boilerplate Manim sc
 - Resolve templates from `DATA_DIR/assets/session-templates/<templateId>.py`.
 - Fall back to the default template when the requested id is missing or omitted.
 - Store the resolved template id on each session.
-- Inject template Python before the first generated Manim section.
+- Render by loading the full template script, replacing reserved quoted literals, then appending generated user sections at the bottom.
 - Preserve the selected template across reset.
 
 Out of scope:
 
 - Template CRUD APIs.
 - Template validation beyond normal render-time Python/Manim errors.
-- Full scene wrapper templates.
+- Parsing section markers.
 - New dependencies.
 
 ## Chosen approach
 
-Use plain Python template files. A template is authored as normal Manim scene-body code and inserted into the generated `GeneratedScene.construct()` method before any `self.next_section(...)` call.
+Use full-wrapper Python template files. Authors write the same shape as the generated Manim script:
 
-This keeps authoring simple: no JSON escaping, no mini-language, no extra execution model. It matches existing section behavior, where trusted Python snippets become part of the generated scene script.
+```python
+from manim import *
+from manim.opengl import *
+
+
+class GeneratedScene(Scene):
+    def construct(self):
+        session_id = "__SESSION_ID__"
+        session_title = "__SESSION_TITLE__"
+        template_id = "__TEMPLATE_ID__"
+
+        title = Text(session_title or "Untitled").to_edge(UP)
+        self.add(title)
+```
+
+The renderer performs exact replacement of reserved quoted literals, then appends user sections at the file bottom. No marker is parsed. Template authors control everything above the appended sections.
 
 ## Template assets
 
@@ -43,55 +58,58 @@ default
 If `DATA_DIR/assets/session-templates/default.py` exists, it is the default template asset. If it does not exist, the service uses this built-in fallback:
 
 ```python
-title = Text(session_title or "Untitled").to_edge(UP)
-self.add(title)
+from manim import *
+from manim.opengl import *
+
+
+class GeneratedScene(Scene):
+    def construct(self):
+        session_id = "__SESSION_ID__"
+        session_title = "__SESSION_TITLE__"
+        template_id = "__TEMPLATE_ID__"
+
+        title = Text(session_title or "Untitled").to_edge(UP)
+        self.add(title)
 ```
 
 Template ids are path-safe asset names only. Invalid ids, missing ids, and unknown ids resolve to `default` for session creation.
 
 ## Template authoring guide
 
-Template files are scene-body Python. Authors start with the first statement they want to run inside `GeneratedScene.construct()`.
-
-They should not include:
-
-- `from manim import *`
-- `class GeneratedScene(Scene):`
-- `def construct(self):`
-- manual indentation for construct scope
-
-Example template file:
+A template is a complete Python file. It should define the scene class that Manim renders:
 
 ```python
-# DATA_DIR/assets/session-templates/title-card.py
+class GeneratedScene(Scene):
+    def construct(self):
+        ...
+```
+
+Authoring rules:
+
+- Keep the class name `GeneratedScene`; the renderer invokes Manim with that scene name.
+- Put boilerplate inside `GeneratedScene.construct()`.
+- End the file while still inside `construct()` indentation. User sections are appended at EOF using the same construct indentation.
+- Do not call `self.next_section(...)` for user sections; the renderer appends those for each saved section.
+- Use the reserved quoted literals only in the injection block.
+
+Recommended injection block:
+
+```python
+# DO NOT EDIT: replaced by manim-server before render.
+session_id = "__SESSION_ID__"
+session_title = "__SESSION_TITLE__"
+template_id = "__TEMPLATE_ID__"
+```
+
+Template implementation starts after that block:
+
+```python
 title = Text(session_title or "Untitled").to_edge(UP)
 self.add(title)
 self.wait(0.25)
 ```
 
-Reserved local names available to templates:
-
-```python
-session_id: str
-session_title: str | None
-template_id: str
-```
-
-Template code also has access to:
-
-- `self`, the active `GeneratedScene` instance.
-- `from manim import *`.
-- `from manim.opengl import *`.
-
-Template authors may read the reserved locals. They should not assign to them.
-
-## Injection mechanism
-
-The renderer does not replace placeholder text inside template files. It generates valid Python local assignments before the template body, then indents the template source into `construct()`.
-
-This avoids brittle string replacement in comments, strings, and quoted Python expressions. The reserved names are normal Python locals, so template code stays valid in an editor.
-
-Generated order:
+Full authoring example:
 
 ```python
 from manim import *
@@ -100,6 +118,38 @@ from manim.opengl import *
 
 class GeneratedScene(Scene):
     def construct(self):
+        # DO NOT EDIT: replaced by manim-server before render.
+        session_id = "__SESSION_ID__"
+        session_title = "__SESSION_TITLE__"
+        template_id = "__TEMPLATE_ID__"
+
+        # Template implementation goes here.
+        title = Text(session_title or "Untitled").to_edge(UP)
+        self.add(title)
+
+        # User sections are appended below this file by manim-server.
+```
+
+## Injection and append mechanism
+
+The renderer does not parse Python and does not search for a section marker. It performs two simple operations:
+
+1. Replace exact reserved quoted literals:
+   - `"__SESSION_ID__"` -> `repr(session_id)`
+   - `"__SESSION_TITLE__"` -> `repr(session_title)`
+   - `"__TEMPLATE_ID__"` -> `repr(template_id)`
+2. Append generated section code at the bottom of the template file, indented for `GeneratedScene.construct()`.
+
+Generated result:
+
+```python
+from manim import *
+from manim.opengl import *
+
+
+class GeneratedScene(Scene):
+    def construct(self):
+        # DO NOT EDIT: replaced by manim-server before render.
         session_id = "demo"
         session_title = "Demo"
         template_id = "default"
@@ -110,6 +160,8 @@ class GeneratedScene(Scene):
         self.next_section("0001")
         self.wait(1)
 ```
+
+Using `repr(...)` keeps quotes, newlines, and `None` valid Python values.
 
 ## Data model
 
@@ -136,7 +188,7 @@ Rules:
 1. If `template_id` is omitted, use `default`.
 2. If `template_id` points to an existing template file, use it.
 3. If `template_id` is invalid or missing, use `default`.
-4. If `default.py` is missing, use the built-in default code.
+4. If `default.py` is missing, use the built-in default script.
 
 `reset_session(session_id)` clears sections and latest render, but preserves `templateId` and title.
 
@@ -154,7 +206,7 @@ build_scene_script(
 )
 ```
 
-`build_scene_script(...)` emits the injected locals, then template code, then user sections. If there are no user sections, the template still renders, followed by the existing short wait if needed to keep Manim output valid.
+`build_scene_script(...)` replaces reserved quoted literals in `template_code`, appends generated user sections at EOF, and returns the complete script. If there are no user sections, the template still renders; the renderer appends the existing short wait only if needed to keep Manim output valid.
 
 ## API and MCP
 
@@ -182,6 +234,8 @@ Unknown templates do not fail session creation; they fall back to `default` as r
 
 Render-time errors from template Python are treated like section code errors: the Manim render fails and returns the existing render error behavior.
 
+Malformed templates are not rejected at session creation. If a template omits `GeneratedScene`, moves out of `construct()` before EOF, or has invalid Python, render fails with the existing Manim error path.
+
 ## Tests
 
 Add focused tests:
@@ -189,11 +243,13 @@ Add focused tests:
 - Creating a session without `templateId` stores `default`.
 - Creating with an unknown `templateId` stores `default`.
 - Creating with a file-backed template stores that template id.
-- Generated script injects `session_id`, `session_title`, and `template_id` as locals before template code.
-- Generated script places template code before first `self.next_section(...)`.
+- Generated script replaces reserved quoted literals with valid Python values.
+- Generated script appends user sections at EOF after template boilerplate.
 - Reset preserves `templateId`.
 - Existing session JSON without `templateId` loads as `default`.
 
 ## Non-goals and deliberate shortcuts
 
 No CRUD API for template assets in this version. Operators can add files directly under `DATA_DIR/assets/session-templates`. Add CRUD later only when a client needs to manage templates remotely.
+
+No marker parser in this version. Appending at EOF is the contract; templates that need code after user sections are a later feature.
