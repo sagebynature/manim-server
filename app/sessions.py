@@ -135,7 +135,15 @@ class SessionService:
         if self.renderer is None:
             raise RuntimeError("renderer is not configured")
         detail = self.store.load(session_id)
-        summary = self.renderer.render(detail.sessionId, detail.sections, cache)
+        template = self.templates.resolve(detail.templateId)
+        summary = self.renderer.render(
+            detail.sessionId,
+            detail.sections,
+            cache,
+            template.code,
+            session_title=detail.title,
+            template_id=template.templateId,
+        )
         detail.latestRender = summary
         self.store.save(detail)
         return summary

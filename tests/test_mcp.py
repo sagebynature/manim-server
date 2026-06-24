@@ -7,7 +7,15 @@ from app.sessions import SessionService, SessionStore
 
 
 class FakeRenderer:
-    def render(self, session_id, sections, cache):
+    def render(
+        self,
+        session_id,
+        sections,
+        cache,
+        template_code="",
+        session_title=None,
+        template_id="default",
+    ):
         return RenderSummary(fullVideoUrl=f"/sessions/{session_id}/video", sections=[])
 
 
@@ -26,6 +34,17 @@ def test_mcp_tools_call_shared_service(tmp_path):
         == f"/sessions/{session['sessionId']}/video"
     )
     assert tools["get_session"](session["sessionId"])["sectionCount"] == 1
+
+
+def test_mcp_create_session_accepts_template_id(tmp_path):
+    template_dir = tmp_path / "assets" / "session-templates"
+    template_dir.mkdir(parents=True)
+    (template_dir / "lecture.py").write_text("# lecture template\n", encoding="utf-8")
+    tools = create_tool_functions(SessionService(SessionStore(tmp_path)))
+
+    session = tools["create_session"]("Demo", template_id="lecture")
+
+    assert session["templateId"] == "lecture"
 
 
 def test_app_mounts_mcp_route(tmp_path):

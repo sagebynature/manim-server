@@ -86,7 +86,9 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
         manim_session_id: str | None = Header(None, alias="Manim-Session-ID"),
     ):
         try:
-            return service.create_session(body.title, manim_session_id or sessionId)
+            return service.create_session(
+                body.title, manim_session_id or sessionId, body.templateId
+            )
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 

@@ -105,19 +105,53 @@ def test_reset_keeps_session_but_clears_sections(tmp_path):
 
 
 class RecordingRenderer:
-    def render(self, session_id, sections, cache):
-        sections = [
+    def __init__(self):
+        self.calls = []
+
+    def render(
+        self,
+        session_id,
+        sections,
+        cache,
+        template_code,
+        session_title=None,
+        template_id="default",
+    ):
+        self.calls.append(
+            {
+                "session_id": session_id,
+                "template_code": template_code,
+                "session_title": session_title,
+                "template_id": template_id,
+            }
+        )
+        artifacts = [
             SectionArtifact(
                 sectionId=section.sectionId,
                 videoUrl=f"/sessions/{session_id}/sections/{section.sectionId}/video",
             )
             for section in sections
         ]
-        return RenderSummary(
-            fullVideoUrl=f"/sessions/{session_id}/video", sections=sections
-        )
+        return RenderSummary(fullVideoUrl=f"/sessions/{session_id}/video", sections=artifacts)
 
 
+
+def test_render_passes_resolved_template_context(tmp_path):
+    template_dir = tmp_path / "assets" / "session-templates"
+    template_dir.mkdir(parents=True)
+    (template_dir / "lecture.py").write_text("# lecture template\n", encoding="utf-8")
+    renderer = RecordingRenderer()
+    service = SessionService(SessionStore(tmp_path), renderer)
+    session = service.create_session("Demo", template_id="lecture")
+
+    service.render_scene(session.sessionId, RenderCacheMode.USE)
+
+    assert renderer.calls[-1] == {
+        "session_id": session.sessionId,
+        "template_code": "# lecture template\n",
+        "session_title": "Demo",
+        "template_id": "lecture",
+    }
 def test_render_is_single_current_snapshot_with_sections(tmp_path):
     service = SessionService(SessionStore(tmp_path), RecordingRenderer())
     session = service.create_session("Demo")

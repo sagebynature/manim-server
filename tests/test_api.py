@@ -63,6 +63,27 @@ def test_create_session_accepts_manim_session_id_header(tmp_path: Path):
     assert client.get("/sessions/browser-session-1").json()["title"] == "Header session"
 
 
+def test_create_session_accepts_template_id(tmp_path: Path):
+    template_dir = tmp_path / "assets" / "session-templates"
+    template_dir.mkdir(parents=True)
+    (template_dir / "lecture.py").write_text("# lecture template\n", encoding="utf-8")
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.post("/sessions", json={"title": "Demo", "templateId": "lecture"})
+
+    assert response.status_code == 200
+    assert response.json()["templateId"] == "lecture"
+
+
+def test_create_session_unknown_template_falls_back_to_default(tmp_path: Path):
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.post("/sessions", json={"title": "Demo", "templateId": "missing"})
+
+    assert response.status_code == 200
+    assert response.json()["templateId"] == "default"
+
+
 def test_openapi_documents_request_and_response_payloads(tmp_path: Path):
     app = create_app(data_dir=tmp_path)
     schema = app.openapi()
@@ -126,7 +147,15 @@ class FakeRenderer:
     def __init__(self, data_dir: Path):
         self.data_dir = data_dir
 
-    def render(self, session_id, sections, cache):
+    def render(
+        self,
+        session_id,
+        sections,
+        cache,
+        template_code="",
+        session_title=None,
+        template_id="default",
+    ):
         render_dir = self.data_dir / "sessions" / session_id / "render"
         render_dir.mkdir(parents=True, exist_ok=True)
         (render_dir / "GeneratedScene.mp4").write_bytes(b"mp4")

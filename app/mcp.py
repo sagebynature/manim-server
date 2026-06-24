@@ -13,8 +13,8 @@ def dump(value) -> dict[str, Any]:
 
 
 def create_tool_functions(service: SessionService):
-    def create_session(title: str | None = None):
-        return dump(service.create_session(title))
+    def create_session(title: str | None = None, template_id: str | None = None):
+        return dump(service.create_session(title, template_id=template_id))
 
     def list_sessions():
         return {"sessions": [dump(item) for item in service.list_sessions()]}
@@ -64,8 +64,10 @@ def create_mcp_server(service: SessionService) -> FastMCP:
     tools = create_tool_functions(service)
 
     @mcp.tool(description=DOCS["create_session"].description)
-    def create_session(title: str | None = None) -> dict[str, Any]:
-        return tools["create_session"](title)
+    def create_session(
+        title: str | None = None, template_id: str | None = None
+    ) -> dict[str, Any]:
+        return tools["create_session"](title, template_id)
 
     @mcp.tool(description=DOCS["list_sessions"].description)
     def list_sessions() -> dict[str, Any]:

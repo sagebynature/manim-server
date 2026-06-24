@@ -11,8 +11,10 @@ DOCS: dict[str, EndpointDoc] = {
         "Create session",
         "Start here: create new Manim scene session. Use this before append_section "
         "or render_scene building new animation. Optional title labels "
-        "session in later list/get calls. Manim-Session-ID header or "
-        "sessionId cookie may set the session id. Returns sessionId, title, section count, and render metadata.",
+        "session in later list/get calls. Optional templateId selects a file-backed "
+        "template asset from DATA_DIR/assets/session-templates; missing or unknown "
+        "templateId falls back to default. Manim-Session-ID header or "
+        "sessionId cookie may set session id. Returns sessionId, title, section count, render metadata.",
     ),
     "list_sessions": EndpointDoc(
         "List sessions",
