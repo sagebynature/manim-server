@@ -36,7 +36,8 @@ docker-build:
 	docker build -t $(IMAGE) .
 
 docker-run:
-	docker run --rm -p $(PORT):8000 -e DATA_DIR=/data $(IMAGE)
+	mkdir -p $(DATA_DIR)
+	docker run --rm -p $(PORT):8000 -e DATA_DIR=/data -v "$(CURDIR)/$(DATA_DIR):/data" $(IMAGE)
 
 docker-smoke: docker-build
 	docker rm -f $(CONTAINER) >/dev/null 2>&1 || true
