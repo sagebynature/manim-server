@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 from app.config import load_settings
 
 

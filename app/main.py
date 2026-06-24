@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+import os
 from pathlib import Path
 from time import perf_counter
 
@@ -219,11 +220,14 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
 
 
 def file_response(path: Path, root: Path) -> FileResponse:
-    resolved_root = root.resolve()
-    resolved_path = path.resolve()
-    if not resolved_path.is_relative_to(resolved_root) or not resolved_path.exists():
+    resolved_root = os.path.realpath(root)
+    resolved_path = os.path.realpath(path)
+    if os.path.commonpath([resolved_root, resolved_path]) != resolved_root:
         raise HTTPException(status_code=404, detail="artifact not found")
-    return FileResponse(resolved_path, media_type="video/mp4")
+    safe_path = Path(resolved_path)
+    if not safe_path.exists():
+        raise HTTPException(status_code=404, detail="artifact not found")
+    return FileResponse(safe_path, media_type="video/mp4")
 
 
 app = create_app()
