@@ -25,9 +25,9 @@ def test_create_session_uses_file_backed_template_id(tmp_path):
     template_dir = tmp_path / "assets" / "session-templates"
     template_dir.mkdir(parents=True)
     (template_dir / "lecture.py").write_text(
-        'from manim import *\n\n'
-        'class GeneratedScene(Scene):\n'
-        '    def construct(self):\n'
+        "from manim import *\n\n"
+        "class GeneratedScene(Scene):\n"
+        "    def construct(self):\n"
         '        session_id = "__SESSION_ID__"\n'
         '        session_title = "__SESSION_TITLE__"\n'
         '        template_id = "__TEMPLATE_ID__"\n',
@@ -44,7 +44,9 @@ def test_create_session_uses_file_backed_template_id(tmp_path):
 def test_reset_preserves_template_id(tmp_path):
     template_dir = tmp_path / "assets" / "session-templates"
     template_dir.mkdir(parents=True)
-    (template_dir / "lecture.py").write_text("# valid enough resolution\n", encoding="utf-8")
+    (template_dir / "lecture.py").write_text(
+        "# valid enough resolution\n", encoding="utf-8"
+    )
     service = SessionService(SessionStore(tmp_path))
     session = service.create_session("Demo", template_id="lecture")
     service.append_section(session.sessionId, "self.wait(1)")
@@ -74,7 +76,12 @@ def test_existing_session_json_without_template_id_loads_default(tmp_path):
     loaded = SessionService(SessionStore(tmp_path)).get_session("legacy")
 
     assert loaded.templateId == "default"
-    assert SessionDetail.model_validate_json((session_dir / "session.json").read_text()).templateId == "default"
+    assert (
+        SessionDetail.model_validate_json(
+            (session_dir / "session.json").read_text()
+        ).templateId
+        == "default"
+    )
 
 
 def test_session_store_persists_sections(tmp_path):
@@ -132,8 +139,9 @@ class RecordingRenderer:
             )
             for section in sections
         ]
-        return RenderSummary(fullVideoUrl=f"/sessions/{session_id}/video", sections=artifacts)
-
+        return RenderSummary(
+            fullVideoUrl=f"/sessions/{session_id}/video", sections=artifacts
+        )
 
 
 def test_render_passes_resolved_template_context(tmp_path):
@@ -152,6 +160,8 @@ def test_render_passes_resolved_template_context(tmp_path):
         "session_title": "Demo",
         "template_id": "lecture",
     }
+
+
 def test_render_is_single_current_snapshot_with_sections(tmp_path):
     service = SessionService(SessionStore(tmp_path), RecordingRenderer())
     session = service.create_session("Demo")

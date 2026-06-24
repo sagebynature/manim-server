@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 DEFAULT_TEMPLATE_ID: str = "default"
-DEFAULT_TEMPLATE_SCRIPT: str = '''from manim import *
+DEFAULT_TEMPLATE_SCRIPT: str = """from manim import *
 from manim.opengl import *
 
 
@@ -18,7 +18,7 @@ class GeneratedScene(Scene):
 
         title = Text(session_title or "Untitled").to_edge(UP)
         self.add(title)
-'''
+"""
 
 
 @dataclass(frozen=True)

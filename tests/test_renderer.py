@@ -8,7 +8,7 @@ from app.models import RenderCacheMode, Section
 from app.renderer import ManimRenderer, build_scene_script
 
 
-FULL_TEMPLATE = '''from manim import *
+FULL_TEMPLATE = """from manim import *
 from manim.opengl import *
 
 
@@ -20,7 +20,7 @@ class GeneratedScene(Scene):
 
         title = Text(session_title or "Untitled").to_edge(UP)
         self.add(title)
-'''
+"""
 
 
 def op(section_id: str, code: str) -> Section:
@@ -37,7 +37,7 @@ def test_build_scene_script_replaces_template_literals_and_appends_sections():
     )
 
     assert "session_id = 's1'" in script
-    assert 'session_title = \'A "quoted" title\'' in script
+    assert "session_title = 'A \"quoted\" title'" in script
     assert "template_id = 'lecture'" in script
     assert "__SESSION_ID__" not in script
     assert script.index("self.add(title)") < script.index("self.next_section('0001')")

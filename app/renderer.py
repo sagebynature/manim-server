@@ -46,6 +46,7 @@ def build_scene_script(
 
     return "\n".join(lines) + "\n"
 
+
 class ManimRenderer:
     def __init__(
         self,
