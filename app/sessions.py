@@ -65,7 +65,7 @@ class SessionService:
     ):
         self.store = store
         self.renderer = renderer
-        self.templates = templates or TemplateStore(store.data_dir)
+        self.templates = templates or TemplateStore(Path("template").resolve())
 
     def create_session(
         self,

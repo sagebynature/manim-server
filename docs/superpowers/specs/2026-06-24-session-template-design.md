@@ -7,7 +7,7 @@ Add session templates: named file-backed Manim Python script assets. A template 
 ## Scope
 
 - Add optional `templateId` to session creation over REST and MCP.
-- Resolve templates from `DATA_DIR/assets/session-templates/<templateId>.py`.
+- Resolve templates from `TEMPLATE_DIR/<templateId>.py`.
 - Fall back to the default template when the requested id is missing or omitted.
 - Store the resolved template id on each session.
 - Render by loading the full template script, replacing reserved quoted literals, then appending generated user sections at the bottom.
@@ -46,7 +46,7 @@ The renderer performs exact replacement of reserved quoted literals, then append
 Template files live under:
 
 ```text
-DATA_DIR/assets/session-templates/<templateId>.py
+TEMPLATE_DIR/<templateId>.py
 ```
 
 The default template id is:
@@ -55,7 +55,9 @@ The default template id is:
 default
 ```
 
-If `DATA_DIR/assets/session-templates/default.py` exists, it is the default template asset. If it does not exist, the service uses this built-in fallback:
+If `TEMPLATE_DIR/default.py` exists, it is the default template asset. The repository ships `template/default.py`; if the configured default template is missing, session creation fails until the template directory is fixed.
+
+Default file contents:
 
 ```python
 from manim import *
@@ -188,7 +190,7 @@ Rules:
 1. If `template_id` is omitted, use `default`.
 2. If `template_id` points to an existing template file, use it.
 3. If `template_id` is invalid or missing, use `default`.
-4. If `default.py` is missing, use the built-in default script.
+4. If `default.py` is missing, raise a configuration error until `TEMPLATE_DIR/default.py` exists.
 
 `reset_session(session_id)` clears sections and latest render, but preserves `templateId` and title.
 
@@ -250,6 +252,6 @@ Add focused tests:
 
 ## Non-goals and deliberate shortcuts
 
-No CRUD API for template assets in this version. Operators can add files directly under `DATA_DIR/assets/session-templates`. Add CRUD later only when a client needs to manage templates remotely.
+No CRUD API for template assets in this version. Operators can add files directly under `TEMPLATE_DIR`. Add CRUD later only when a client needs to manage templates remotely.
 
 No marker parser in this version. Appending at EOF is the contract; templates that need code after user sections are a later feature.

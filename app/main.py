@@ -19,6 +19,7 @@ from app.models import (
 )
 from app.renderer import ManimRenderer
 from app.sessions import SessionService, SessionStore
+from app.templates import TemplateStore
 
 
 def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
@@ -62,6 +63,7 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
             cli_flags=settings.manim_cli_flags,
             timeout_seconds=settings.manim_timeout_seconds,
         ),
+        TemplateStore(settings.template_dir),
     )
     app.state.service = service
     app.state.data_dir = root

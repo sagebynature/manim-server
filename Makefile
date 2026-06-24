@@ -5,6 +5,7 @@ UV ?= uv
 HOST ?= 127.0.0.1
 PORT ?= 8000
 DATA_DIR ?= .manim-server-data
+TEMPLATE_DIR ?= template
 MANIM_CLI_FLAGS ?= -ql
 MANIM_TIMEOUT_SECONDS ?= 120
 PYTEST_ARGS ?= -q
@@ -42,9 +43,9 @@ docker-build:
 	docker build -t $(IMAGE) .
 
 docker-run:
-	mkdir -p $(DATA_DIR)
+	mkdir -p $(DATA_DIR) $(TEMPLATE_DIR)
 	docker rm -f manim-server >/dev/null 2>&1 || true
-	docker run --name manim-server --rm -d -p $(PORT):8000 -e DATA_DIR=/data -e MANIM_CLI_FLAGS=$(MANIM_CLI_FLAGS) -v "$(CURDIR)/$(DATA_DIR):/data" $(IMAGE)
+	docker run --name manim-server --rm -d -p $(PORT):8000 -e DATA_DIR=/data -e TEMPLATE_DIR=/template -e MANIM_CLI_FLAGS=$(MANIM_CLI_FLAGS) -v "$(CURDIR)/$(DATA_DIR):/data" -v "$(CURDIR)/$(TEMPLATE_DIR):/template" $(IMAGE)
 
 docker-smoke: docker-build
 	docker rm -f $(CONTAINER) >/dev/null 2>&1 || true

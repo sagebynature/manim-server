@@ -2,6 +2,7 @@ import json
 
 from app.models import RenderCacheMode, RenderSummary, SectionArtifact, SessionDetail
 from app.sessions import SessionService, SessionStore
+from app.templates import TemplateStore
 
 
 def test_create_session_defaults_to_default_template(tmp_path):
@@ -22,8 +23,8 @@ def test_create_session_falls_back_to_default_when_template_missing(tmp_path):
 
 
 def test_create_session_uses_file_backed_template_id(tmp_path):
-    template_dir = tmp_path / "assets" / "session-templates"
-    template_dir.mkdir(parents=True)
+    template_dir = tmp_path / "template"
+    template_dir.mkdir()
     (template_dir / "lecture.py").write_text(
         "from manim import *\n\n"
         "class GeneratedScene(Scene):\n"
@@ -33,8 +34,22 @@ def test_create_session_uses_file_backed_template_id(tmp_path):
         '        template_id = "__TEMPLATE_ID__"\n',
         encoding="utf-8",
     )
+    service = SessionService(
+        SessionStore(tmp_path), templates=TemplateStore(template_dir)
+    )
 
-    service = SessionService(SessionStore(tmp_path))
+    session = service.create_session("Demo", template_id="lecture")
+
+    assert session.templateId == "lecture"
+
+
+def test_create_session_uses_top_level_template_dir(tmp_path):
+    template_dir = tmp_path / "template"
+    template_dir.mkdir()
+    (template_dir / "lecture.py").write_text("# lecture template\n", encoding="utf-8")
+    service = SessionService(
+        SessionStore(tmp_path), templates=TemplateStore(template_dir)
+    )
 
     session = service.create_session("Demo", template_id="lecture")
 
@@ -42,12 +57,14 @@ def test_create_session_uses_file_backed_template_id(tmp_path):
 
 
 def test_reset_preserves_template_id(tmp_path):
-    template_dir = tmp_path / "assets" / "session-templates"
-    template_dir.mkdir(parents=True)
+    template_dir = tmp_path / "template"
+    template_dir.mkdir()
     (template_dir / "lecture.py").write_text(
-        "# valid enough resolution\n", encoding="utf-8"
+        "# valid enough for resolution\n", encoding="utf-8"
     )
-    service = SessionService(SessionStore(tmp_path))
+    service = SessionService(
+        SessionStore(tmp_path), templates=TemplateStore(template_dir)
+    )
     session = service.create_session("Demo", template_id="lecture")
     service.append_section(session.sessionId, "self.wait(1)")
 
@@ -145,11 +162,13 @@ class RecordingRenderer:
 
 
 def test_render_passes_resolved_template_context(tmp_path):
-    template_dir = tmp_path / "assets" / "session-templates"
-    template_dir.mkdir(parents=True)
+    template_dir = tmp_path / "template"
+    template_dir.mkdir()
     (template_dir / "lecture.py").write_text("# lecture template\n", encoding="utf-8")
     renderer = RecordingRenderer()
-    service = SessionService(SessionStore(tmp_path), renderer)
+    service = SessionService(
+        SessionStore(tmp_path), renderer, TemplateStore(template_dir)
+    )
     session = service.create_session("Demo", template_id="lecture")
 
     service.render_scene(session.sessionId, RenderCacheMode.USE)

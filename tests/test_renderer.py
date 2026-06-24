@@ -59,9 +59,9 @@ def test_build_scene_script_adds_section_title_comment():
             Section(
                 sectionId="0001", title="Intro", code="self.wait(0.1)", createdAt="now"
             )
-        ]
+        ],
+        template_code=FULL_TEMPLATE,
     )
-
     assert (
         "        # Intro\n        self.next_section('0001')\n        self.wait(0.1)"
         in script
@@ -70,7 +70,8 @@ def test_build_scene_script_adds_section_title_comment():
 
 def test_build_scene_script_names_sections_before_sections():
     script = build_scene_script(
-        [op("0001", "self.add(Circle())"), op("0002", "self.wait(1)")]
+        [op("0001", "self.add(Circle())"), op("0002", "self.wait(1)")],
+        template_code=FULL_TEMPLATE,
     )
 
     assert "self.next_section('0001')\n        self.add(Circle())" in script
@@ -109,7 +110,12 @@ def test_renderer_copies_full_video_and_named_sections(tmp_path: Path, monkeypat
     stale.parent.mkdir(parents=True)
     stale.write_bytes(b"stale")
 
-    summary = renderer.render("s1", [op("0001", "self.wait(1)")], RenderCacheMode.USE)
+    summary = renderer.render(
+        "s1",
+        [op("0001", "self.wait(1)")],
+        RenderCacheMode.USE,
+        template_code=FULL_TEMPLATE,
+    )
 
     assert seen_command is not None
     assert seen_command[:6] == [
@@ -137,6 +143,7 @@ def test_real_manim_sections_are_named_by_section_id(tmp_path: Path):
         "s1",
         [op("0001", "self.add(Circle())\nself.wait(0.1)")],
         RenderCacheMode.DISABLE,
+        template_code=FULL_TEMPLATE,
     )
 
     assert (tmp_path / "sessions" / "s1" / "render" / "GeneratedScene.mp4").exists()

@@ -63,10 +63,11 @@ def test_create_session_accepts_manim_session_id_header(tmp_path: Path):
     assert client.get("/sessions/browser-session-1").json()["title"] == "Header session"
 
 
-def test_create_session_accepts_template_id(tmp_path: Path):
-    template_dir = tmp_path / "assets" / "session-templates"
-    template_dir.mkdir(parents=True)
+def test_create_session_accepts_template_id(tmp_path: Path, monkeypatch):
+    template_dir = tmp_path / "template"
+    template_dir.mkdir()
     (template_dir / "lecture.py").write_text("# lecture template\n", encoding="utf-8")
+    monkeypatch.setenv("TEMPLATE_DIR", str(template_dir))
     client = TestClient(create_app(data_dir=tmp_path))
 
     response = client.post("/sessions", json={"title": "Demo", "templateId": "lecture"})

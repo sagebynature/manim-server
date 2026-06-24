@@ -4,6 +4,7 @@ from app.main import create_app
 from app.mcp import create_mcp_server, create_tool_functions
 from app.models import RenderSummary
 from app.sessions import SessionService, SessionStore
+from app.templates import TemplateStore
 
 
 class FakeRenderer:
@@ -37,10 +38,12 @@ def test_mcp_tools_call_shared_service(tmp_path):
 
 
 def test_mcp_create_session_accepts_template_id(tmp_path):
-    template_dir = tmp_path / "assets" / "session-templates"
-    template_dir.mkdir(parents=True)
+    template_dir = tmp_path / "template"
+    template_dir.mkdir()
     (template_dir / "lecture.py").write_text("# lecture template\n", encoding="utf-8")
-    tools = create_tool_functions(SessionService(SessionStore(tmp_path)))
+    tools = create_tool_functions(
+        SessionService(SessionStore(tmp_path), templates=TemplateStore(template_dir))
+    )
 
     session = tools["create_session"]("Demo", template_id="lecture")
 

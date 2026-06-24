@@ -11,9 +11,9 @@
 ## Global Constraints
 
 - No new dependencies.
-- Template files live at `DATA_DIR/assets/session-templates/<templateId>.py`.
+- Template files live at `TEMPLATE_DIR/<templateId>.py`.
 - Missing, omitted, invalid, or unknown template ids resolve to `default`.
-- Built-in default script is used when `default.py` is absent.
+- Repository ships `template/default.py`; missing configured `default.py` is a configuration error.
 - Template script must define `GeneratedScene`; malformed templates fail at render time through the existing Manim error path.
 - Renderer replaces only exact quoted literals: `"__SESSION_ID__"`, `"__SESSION_TITLE__"`, `"__TEMPLATE_ID__"`.
 - Renderer appends user sections at EOF; no section marker parsing.
@@ -25,7 +25,7 @@
 
 ## File Structure
 
-- Create `app/templates.py`: path-safe template id validation, built-in default template script, file-backed resolution.
+- Create `app/templates.py`: path-safe template id validation and file-backed template resolution.
 - Modify `app/models.py`: add `templateId` to create request, detail, and summary models.
 - Modify `app/sessions.py`: own a `TemplateStore`, resolve template id during session creation, preserve template id on reset, pass template script/context into renderer.
 - Modify `app/renderer.py`: turn `build_scene_script()` into full-wrapper template injection plus EOF section append.
@@ -85,7 +85,7 @@ def test_create_session_falls_back_to_default_when_template_missing(tmp_path):
 
 
 def test_create_session_uses_file_backed_template_id(tmp_path):
-    template_dir = tmp_path / "assets" / "session-templates"
+    template_dir = tmp_path / "template"
     template_dir.mkdir(parents=True)
     (template_dir / "lecture.py").write_text(
         'from manim import *\n\nclass GeneratedScene(Scene):\n'
@@ -103,7 +103,7 @@ def test_create_session_uses_file_backed_template_id(tmp_path):
 
 
 def test_reset_preserves_template_id(tmp_path):
-    template_dir = tmp_path / "assets" / "session-templates"
+    template_dir = tmp_path / "template"
     template_dir.mkdir(parents=True)
     (template_dir / "lecture.py").write_text("# valid enough for resolution\n", encoding="utf-8")
     service = SessionService(SessionStore(tmp_path))
@@ -183,7 +183,7 @@ class TemplateAsset:
 
 class TemplateStore:
     def __init__(self, data_dir: Path):
-        self.templates_dir = data_dir / "assets" / "session-templates"
+        self.templates_dir = template_dir
 
     def resolve(self, template_id: str | None) -> TemplateAsset:
         template_id = template_id if self._safe_id(template_id) else DEFAULT_TEMPLATE_ID
@@ -520,7 +520,7 @@ Add:
 
 ```python
 def test_render_passes_resolved_template_context(tmp_path):
-    template_dir = tmp_path / "assets" / "session-templates"
+    template_dir = tmp_path / "template"
     template_dir.mkdir(parents=True)
     (template_dir / "lecture.py").write_text("# lecture template\n", encoding="utf-8")
     renderer = RecordingRenderer()
@@ -543,7 +543,7 @@ Add to `tests/test_api.py`:
 
 ```python
 def test_create_session_accepts_template_id(tmp_path: Path):
-    template_dir = tmp_path / "assets" / "session-templates"
+    template_dir = tmp_path / "template"
     template_dir.mkdir(parents=True)
     (template_dir / "lecture.py").write_text("# lecture template\n", encoding="utf-8")
     client = TestClient(create_app(data_dir=tmp_path))
@@ -567,7 +567,7 @@ Add to `tests/test_mcp.py`:
 
 ```python
 def test_mcp_create_session_accepts_template_id(tmp_path):
-    template_dir = tmp_path / "assets" / "session-templates"
+    template_dir = tmp_path / "template"
     template_dir.mkdir(parents=True)
     (template_dir / "lecture.py").write_text("# lecture template\n", encoding="utf-8")
     tools = create_tool_functions(SessionService(SessionStore(tmp_path)))
@@ -633,7 +633,7 @@ Modify `app/docs.py` `create_session` text to include:
 
 ```python
 "Optional templateId selects a file-backed template asset from "
-"DATA_DIR/assets/session-templates; missing or unknown templateId "
+"TEMPLATE_DIR; missing or unknown templateId "
 "falls back to default. "
 ```
 
@@ -687,7 +687,7 @@ curl -sS -X POST http://127.0.0.1:8000/sessions \
   -d '{"title":"Lecture","templateId":"lecture"}'
 ```
 
-Templates are Python files under `DATA_DIR/assets/session-templates/<templateId>.py`.
+Templates are Python files under `TEMPLATE_DIR/<templateId>.py`.
 Unknown or missing template ids fall back to `default`. If `default.py` is absent,
 the server uses the built-in title-header template.
 

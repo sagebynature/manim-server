@@ -5,20 +5,6 @@ from pathlib import Path
 
 
 DEFAULT_TEMPLATE_ID: str = "default"
-DEFAULT_TEMPLATE_SCRIPT: str = """from manim import *
-from manim.opengl import *
-
-
-class GeneratedScene(Scene):
-    def construct(self):
-        # DO NOT EDIT: replaced by manim-server before render.
-        session_id = "__SESSION_ID__"
-        session_title = "__SESSION_TITLE__"
-        template_id = "__TEMPLATE_ID__"
-
-        title = Text(session_title or "Untitled").to_edge(UP)
-        self.add(title)
-"""
 
 
 @dataclass(frozen=True)
@@ -28,8 +14,8 @@ class TemplateAsset:
 
 
 class TemplateStore:
-    def __init__(self, data_dir: Path):
-        self.templates_dir = data_dir / "assets" / "session-templates"
+    def __init__(self, template_dir: Path):
+        self.templates_dir = template_dir
 
     def resolve(self, template_id: str | None) -> TemplateAsset:
         if template_id is None or not self._safe_id(template_id):
@@ -44,7 +30,7 @@ class TemplateStore:
                 DEFAULT_TEMPLATE_ID, default_path.read_text(encoding="utf-8")
             )
 
-        return TemplateAsset(DEFAULT_TEMPLATE_ID, DEFAULT_TEMPLATE_SCRIPT)
+        raise FileNotFoundError(f"missing default template: {default_path}")
 
     @staticmethod
     def _safe_id(template_id: str | None) -> bool:

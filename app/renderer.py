@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from app.models import Section, RenderCacheMode, RenderSummary, SectionArtifact
-from app.templates import DEFAULT_TEMPLATE_ID, DEFAULT_TEMPLATE_SCRIPT
+from app.templates import DEFAULT_TEMPLATE_ID
 
 
 class RenderError(RuntimeError):
@@ -16,7 +16,7 @@ class RenderError(RuntimeError):
 
 def build_scene_script(
     sections: Sequence[Section],
-    template_code: str = DEFAULT_TEMPLATE_SCRIPT,
+    template_code: str,
     session_id: str = "",
     session_title: str | None = None,
     template_id: str = DEFAULT_TEMPLATE_ID,
@@ -72,7 +72,7 @@ class ManimRenderer:
         session_id: str,
         sections: list[Section],
         cache: RenderCacheMode,
-        template_code: str = DEFAULT_TEMPLATE_SCRIPT,
+        template_code: str,
         session_title: str | None = None,
         template_id: str = DEFAULT_TEMPLATE_ID,
     ) -> RenderSummary:

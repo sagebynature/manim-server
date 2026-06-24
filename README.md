@@ -29,12 +29,14 @@ Supported keys:
 HOST=127.0.0.1
 PORT=8000
 DATA_DIR=.manim-server-data
+TEMPLATE_DIR=template
 MANIM_CLI_FLAGS=-ql
 MANIM_TIMEOUT_SECONDS=120
 ```
 
 Notes:
 - `DATA_DIR` stores session JSON logs and rendered MP4 artifacts.
+- `TEMPLATE_DIR` stores named full-wrapper Manim templates.
 - `MANIM_CLI_FLAGS` is split like a shell command, then passed as subprocess args. Common values: `-ql`, `-qm`, `-qh`, `-ql --fps 30`.
 - `--save_sections`, `--media_dir`, cache flags, scene path, and scene class are managed by the server.
 
@@ -134,10 +136,10 @@ curl -sS -X POST http://127.0.0.1:8000/sessions \
   -d '{"title":"Lecture","templateId":"lecture"}'
 ```
 
-Template assets are Python files under
-`DATA_DIR/assets/session-templates/<templateId>.py`. Unknown or missing templates
-fall back to `default.py`; if `default.py` is absent, the server uses its
-built-in title-header template.
+Template assets are Python files under `TEMPLATE_DIR/<templateId>.py`.
+By default this is `./template/<templateId>.py`. Unknown missing templates
+fall back to `default.py`; if `default.py` is absent, session creation fails
+until the template directory is fixed.
 
 Template files are full Manim scripts, not scene-body snippets. Keep the scene
 class named `GeneratedScene`; Manim renders that class, and user sections are
