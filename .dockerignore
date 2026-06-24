@@ -1,0 +1,10 @@
+.git/
+.venv/
+.serena/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+.manim-server-data/
+dist/
+*.egg-info/
+.env
