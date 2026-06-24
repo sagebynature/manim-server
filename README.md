@@ -1,6 +1,6 @@
 # manim-server
 
-Python-only FastAPI + MCP service for trusted Manim Community rendering.
+FastAPI + MCP server for trusted Manim script rendering. (uses [Manim Community](https://www.manim.community/))
 
 ## Install
 
