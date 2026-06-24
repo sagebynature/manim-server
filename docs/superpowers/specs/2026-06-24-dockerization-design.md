@@ -4,26 +4,27 @@
 Dockerize `manim-server` as a full batteries-included image that can run FastAPI, MCP, the Manim CLI, ffmpeg, and common LaTeX-backed Manim scenes without host-level Manim installation.
 
 ## Chosen approach
-Use a Debian-based `python:3.11-slim` runtime image rather than an upstream Manim image or a lean app-only image.
+Use the official Manim Community Docker image as the base:
+
+```dockerfile
+FROM manimcommunity/manim:v0.20.1
+```
 
 Reasons:
-- Matches the service runtime: Python FastAPI app that shells out to `manim`.
-- Keeps native dependencies explicit and reviewable.
-- Supports common Manim rendering paths, including ffmpeg and TeX scenes.
-- Avoids inheriting unknown entrypoints or dependency policy from an upstream image.
+- The project lock currently uses Manim `0.20.1`, so pinning `v0.20.1` avoids `stable` tag drift.
+- The upstream image already carries the Manim CLI and native rendering stack, including ffmpeg, Cairo/Pango, fonts, and a minimal TeX Live install.
+- This keeps the service Dockerfile focused on the FastAPI/MCP server instead of recreating Manim packaging.
+- If a scene needs extra TeX packages beyond upstream minimal TeX Live, extend the image later with the specific missing package. Do not preinstall the full TeX universe unless a real scene needs it.
 
 ## Artifacts
 
 ### Dockerfile
-- Base: `python:3.11-slim`.
-- Install system packages needed by Manim and rendering:
-  - video: `ffmpeg`
-  - Cairo/Pango stack and build support for Python wheels/native deps
-  - LaTeX and SVG helpers: TeX Live packages and `dvisvgm`
-  - fonts used by common scenes
-- Install `uv`.
+- Base: `manimcommunity/manim:v0.20.1`.
+- Install only server/runtime additions not already provided by the Manim image:
+  - `uv`
+  - any small OS package required by the app server or healthcheck if absent
 - Copy `pyproject.toml` and `uv.lock` first for dependency layer caching.
-- Install locked runtime dependencies into the system Python environment.
+- Install locked runtime dependencies for this service.
 - Copy `app/` and project metadata.
 - Configure defaults:
   - `HOST=0.0.0.0`
@@ -50,16 +51,21 @@ Exclude local-only and bulky inputs:
 ### Makefile
 Add:
 - `docker-build`: builds the image.
-- `docker-run`: runs the image on `PORT`, mounting or creating `/data` via Docker defaults if needed.
+- `docker-run`: runs the image on `PORT`.
+- `docker-smoke`: builds the image, verifies `manim --version`, starts the service, and checks `/health`.
 
 ### README
-Add Docker build/run instructions and document that the image includes Manim CLI native dependencies, ffmpeg, LaTeX, and fonts.
+Add Docker build/run instructions and document:
+- The image is based on `manimcommunity/manim:v0.20.1`.
+- The base image includes the Manim CLI and common native rendering dependencies.
+- The base image has minimal TeX Live; install additional TeX packages only when a scene requires them.
 
 ## Verification
 Before claiming completion:
 - Build the Docker image.
-- Run a container and check `/health`.
 - Verify `manim --version` inside the image.
+- Run a container and check `/health`.
+- Run a simple render smoke inside the image if startup and build time allow it.
 - Run Python tests with `uv run python -m pytest -q`.
 
 Known local baseline before Dockerization: local Python tests run, but real-Manim tests fail when host `manim` is missing from PATH. Docker verification must cover the runtime dependency layer.
