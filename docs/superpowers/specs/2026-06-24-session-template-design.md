@@ -49,14 +49,32 @@ self.add(title)
 
 Template ids are path-safe asset names only. Invalid ids, missing ids, and unknown ids resolve to `default` for session creation.
 
-## Template execution context
+## Template authoring guide
 
-The renderer injects these variables before template code:
+Template files are scene-body Python. Authors start with the first statement they want to run inside `GeneratedScene.construct()`.
+
+They should not include:
+
+- `from manim import *`
+- `class GeneratedScene(Scene):`
+- `def construct(self):`
+- manual indentation for construct scope
+
+Example template file:
 
 ```python
-session_id = "..."
-session_title = "..."  # or None
-template_id = "default"
+# DATA_DIR/assets/session-templates/title-card.py
+title = Text(session_title or "Untitled").to_edge(UP)
+self.add(title)
+self.wait(0.25)
+```
+
+Reserved local names available to templates:
+
+```python
+session_id: str
+session_title: str | None
+template_id: str
 ```
 
 Template code also has access to:
@@ -64,6 +82,14 @@ Template code also has access to:
 - `self`, the active `GeneratedScene` instance.
 - `from manim import *`.
 - `from manim.opengl import *`.
+
+Template authors may read the reserved locals. They should not assign to them.
+
+## Injection mechanism
+
+The renderer does not replace placeholder text inside template files. It generates valid Python local assignments before the template body, then indents the template source into `construct()`.
+
+This avoids brittle string replacement in comments, strings, and quoted Python expressions. The reserved names are normal Python locals, so template code stays valid in an editor.
 
 Generated order:
 
@@ -128,7 +154,7 @@ build_scene_script(
 )
 ```
 
-The generated script must place template code before user sections. If there are no user sections, the template still renders, followed by the existing short wait if needed to keep Manim output valid.
+`build_scene_script(...)` emits the injected locals, then template code, then user sections. If there are no user sections, the template still renders, followed by the existing short wait if needed to keep Manim output valid.
 
 ## API and MCP
 
@@ -163,7 +189,7 @@ Add focused tests:
 - Creating a session without `templateId` stores `default`.
 - Creating with an unknown `templateId` stores `default`.
 - Creating with a file-backed template stores that template id.
-- Generated script injects `session_id`, `session_title`, and `template_id` before template code.
+- Generated script injects `session_id`, `session_title`, and `template_id` as locals before template code.
 - Generated script places template code before first `self.next_section(...)`.
 - Reset preserves `templateId`.
 - Existing session JSON without `templateId` loads as `default`.
