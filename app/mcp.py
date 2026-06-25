@@ -1,3 +1,7 @@
+import logging
+from functools import wraps
+from inspect import signature
+from time import perf_counter
 from typing import Any
 
 from fastapi import FastAPI
@@ -10,6 +14,76 @@ from app.sessions import SessionService
 
 def dump(value) -> dict[str, Any]:
     return value.model_dump(mode="json") if hasattr(value, "model_dump") else value
+
+
+logger = logging.getLogger("app.mcp")
+MAX_LOG_STRING = 120
+MAX_LOG_ITEMS = 5
+
+
+def sanitize_log_value(value, *, key: str | None = None):
+    if key == "code" and isinstance(value, str):
+        return f"<redacted code len={len(value)}>"
+    if isinstance(value, str):
+        if len(value) <= MAX_LOG_STRING:
+            return value
+        return f"{value[:MAX_LOG_STRING]}...<truncated len={len(value)}>"
+    if isinstance(value, int | float | bool) or value is None:
+        return value
+    if isinstance(value, dict):
+        items = list(value.items())[:MAX_LOG_ITEMS]
+        sanitized = {
+            str(item_key): sanitize_log_value(item_value, key=str(item_key))
+            for item_key, item_value in items
+        }
+        if len(value) > MAX_LOG_ITEMS:
+            sanitized["..."] = f"<truncated items={len(value) - MAX_LOG_ITEMS}>"
+        return sanitized
+    if isinstance(value, list | tuple):
+        items = value[:MAX_LOG_ITEMS]
+        sanitized = [sanitize_log_value(item) for item in items]
+        if len(value) > MAX_LOG_ITEMS:
+            sanitized.append(f"<truncated items={len(value) - MAX_LOG_ITEMS}>")
+        return sanitized
+    return f"<{type(value).__name__}>"
+
+
+def sanitize_tool_arguments(func, args, kwargs) -> dict[str, Any]:
+    bound = signature(func).bind_partial(*args, **kwargs)
+    return {
+        name: sanitize_log_value(value, key=name)
+        for name, value in bound.arguments.items()
+    }
+
+
+def log_tool_requests(name, func):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        start = perf_counter()
+        arguments = sanitize_tool_arguments(func, args, kwargs)
+        try:
+            result = func(*args, **kwargs)
+        except Exception as exc:
+            duration_ms = (perf_counter() - start) * 1000
+            logger.error(
+                "mcp tool failed tool=%s status=failed duration_ms=%.2f "
+                "error_type=%s arguments=%s",
+                name,
+                duration_ms,
+                type(exc).__name__,
+                arguments,
+            )
+            raise
+        duration_ms = (perf_counter() - start) * 1000
+        logger.info(
+            "mcp tool invoked tool=%s status=ok duration_ms=%.2f arguments=%s",
+            name,
+            duration_ms,
+            arguments,
+        )
+        return result
+
+    return wrapped
 
 
 def create_tool_functions(service: SessionService):
@@ -48,7 +122,7 @@ def create_tool_functions(service: SessionService):
     def reset_session(session_id: str):
         return dump(service.reset_session(session_id))
 
-    return {
+    tools = {
         "create_session": create_session,
         "list_sessions": list_sessions,
         "get_session": get_session,
@@ -57,6 +131,7 @@ def create_tool_functions(service: SessionService):
         "render_scene": render_scene,
         "reset_session": reset_session,
     }
+    return {name: log_tool_requests(name, tool) for name, tool in tools.items()}
 
 
 def create_mcp_server(service: SessionService) -> FastMCP:

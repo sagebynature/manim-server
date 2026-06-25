@@ -1,3 +1,6 @@
+import logging
+import pytest
+
 from fastapi.routing import Mount
 from starlette.testclient import TestClient
 
@@ -49,6 +52,51 @@ def test_mcp_create_session_accepts_template_id(tmp_path):
     session = tools["create_session"]("Demo", template_id="lecture")
 
     assert session["templateId"] == "lecture"
+
+
+def test_mcp_tool_success_logs_sanitized_arguments(tmp_path, caplog):
+    tools = create_tool_functions(
+        SessionService(SessionStore(tmp_path), FakeRenderer())
+    )
+    session = tools["create_session"]("Demo")
+    caplog.clear()
+
+    code = "self.play(Create(Circle()))"
+    with caplog.at_level(logging.INFO, logger="app.mcp"):
+        result = tools["append_section"](session["sessionId"], code, render=True)
+
+    assert result["sessionId"] == session["sessionId"]
+    messages = [record.getMessage() for record in caplog.records]
+    message = next(
+        message for message in messages if "mcp tool invoked" in message
+    )
+
+    assert "tool=append_section" in message
+    assert "status=ok" in message
+    assert "duration_ms=" in message
+    assert f"<redacted code len={len(code)}>" in message
+    assert code not in message
+
+def test_mcp_tool_failure_logs_error_details(tmp_path, caplog):
+    tools = create_tool_functions(
+        SessionService(SessionStore(tmp_path), FakeRenderer())
+    )
+
+    with caplog.at_level(logging.INFO, logger="app.mcp"):
+        with pytest.raises(ValueError):
+            tools["render_scene"]("missing-session", cache="invalid")
+
+    failure_records = [
+        record for record in caplog.records if "mcp tool failed" in record.getMessage()
+    ]
+    assert len(failure_records) == 1
+    failure_record = failure_records[0]
+    message = failure_record.getMessage()
+    assert failure_record.exc_info is None
+    assert "tool=render_scene" in message
+    assert "status=failed" in message
+    assert "duration_ms=" in message
+    assert "error_type=ValueError" in message
 
 
 def test_app_mounts_mcp_route(tmp_path):
