@@ -45,7 +45,13 @@ docker-build:
 docker-run:
 	mkdir -p $(DATA_DIR) $(TEMPLATE_DIR)
 	docker rm -f manim-server >/dev/null 2>&1 || true
-	docker run --name manim-server --rm -d -p $(PORT):8000 -e DATA_DIR=/data -e TEMPLATE_DIR=/template -e MANIM_CLI_FLAGS=$(MANIM_CLI_FLAGS) -v "$(CURDIR)/$(DATA_DIR):/data" -v "$(CURDIR)/$(TEMPLATE_DIR):/template" $(IMAGE)
+	docker run --name manim-server --rm -d \
+	-e TEMPLATE_DIR=/template \
+	-e MANIM_CLI_FLAGS=$(MANIM_CLI_FLAGS) \
+	-e MANIM_TIMEOUT_SECONDS=$(MANIM_TIMEOUT_SECONDS) \
+	-p $(PORT):8000 -e DATA_DIR=/data \
+	-v "$(CURDIR)/$(DATA_DIR):/data" \
+	-v "$(CURDIR)/$(TEMPLATE_DIR):/template" $(IMAGE)
 
 docker-smoke: docker-build
 	docker rm -f $(CONTAINER) >/dev/null 2>&1 || true
