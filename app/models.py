@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RenderCacheMode(StrEnum):
@@ -64,6 +64,17 @@ class SessionSummary(BaseModel):
     templateId: str = "default"
     sectionCount: int
     latestRender: RenderSummary | None = None
+
+
+class TemplateSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    templateId: str
+    description: str
+    useCases: str
+
+
+class ListTemplatesResponse(BaseModel):
+    templates: list[TemplateSummary]
 
 
 class ListSessionsResponse(BaseModel):

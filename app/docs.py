@@ -9,12 +9,19 @@ class EndpointDoc(NamedTuple):
 DOCS: dict[str, EndpointDoc] = {
     "create_session": EndpointDoc(
         "Create session",
-        "Start here: create new Manim scene session. Use this before append_section "
-        "or render_scene building new animation. Optional title labels "
-        "session in later list/get calls. Optional templateId selects file-backed "
-        "template asset TEMPLATE_DIR/<templateId>.py; missing unknown "
-        "templateId falls back default. Manim-Session-ID header or "
-        "sessionId cookie may set session id. Returns sessionId, title, section count, render metadata.",
+        "Start here: create new Manim scene session. Use before append_section "
+        "or render_scene building new animation. Call list_templates first when "
+        "choosing templateId; optional templateId selects file-backed template "
+        "asset TEMPLATE_DIR/<templateId>.py; missing unknown templateId falls "
+        "back default. Manim-Session-ID header or sessionId cookie may set "
+        "session id. Returns sessionId, title, section count, render metadata.",
+    ),
+    "list_templates": EndpointDoc(
+        "List templates",
+        "Fetch complete Manim template catalog before creating session. "
+        "Use compare templateId, description, useCases values, then "
+        "pass selected templateId create_session. Returns all file-backed "
+        "templates available under TEMPLATE_DIR.",
     ),
     "list_sessions": EndpointDoc(
         "List sessions",

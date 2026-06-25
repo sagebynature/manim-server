@@ -54,6 +54,29 @@ def test_mcp_create_session_accepts_template_id(tmp_path):
     assert session["templateId"] == "lecture"
 
 
+def test_mcp_list_templates_returns_template_catalog(tmp_path):
+    template_dir = tmp_path / "template"
+    template_dir.mkdir()
+    (template_dir / "alpha.py").write_text(
+        '"""Alpha template.\n\nUse concise 2D scenes."""\n', encoding="utf-8"
+    )
+    tools = create_tool_functions(
+        SessionService(SessionStore(tmp_path), templates=TemplateStore(template_dir))
+    )
+
+    result = tools["list_templates"]()
+
+    assert result == {
+        "templates": [
+            {
+                "templateId": "alpha",
+                "description": "Alpha template.",
+                "useCases": "Use concise 2D scenes.",
+            }
+        ]
+    }
+
+
 def test_mcp_tool_success_logs_sanitized_arguments(tmp_path, caplog):
     tools = create_tool_functions(
         SessionService(SessionStore(tmp_path), FakeRenderer())
@@ -138,8 +161,13 @@ def test_mcp_tool_descriptions_guide_clients(tmp_path):
     mcp = create_mcp_server(SessionService(SessionStore(tmp_path), FakeRenderer()))
     tools = mcp._tool_manager._tools
 
+    list_description = tools["list_templates"].description
+    assert "complete Manim template catalog" in list_description
+    assert "before creating session" in list_description
+    assert "templateId" in list_description
+
     assert "Start here" in tools["create_session"].description
-    assert "Use this before append_section" in tools["create_session"].description
+    assert "Use before append_section" in tools["create_session"].description
 
     append_description = tools["append_section"].description
     assert "trusted Python Manim scene-body code" in append_description

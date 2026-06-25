@@ -89,6 +89,9 @@ class SessionService:
         self.store.save(detail)
         return detail
 
+    def list_templates(self):
+        return self.templates.list_templates()
+
     def list_sessions(self) -> list[SessionSummary]:
         return [
             SessionSummary(

@@ -1,3 +1,8 @@
+"""Animated presentation card template.
+
+Use for opening title cards, chapter breaks, and short presentation-style intros before the main user-authored animation begins.
+"""
+
 from manim import *
 from manim.opengl import *
 
