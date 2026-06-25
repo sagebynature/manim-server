@@ -67,15 +67,14 @@ def test_mcp_tool_success_logs_sanitized_arguments(tmp_path, caplog):
 
     assert result["sessionId"] == session["sessionId"]
     messages = [record.getMessage() for record in caplog.records]
-    message = next(
-        message for message in messages if "mcp tool invoked" in message
-    )
+    message = next(message for message in messages if "mcp tool invoked" in message)
 
     assert "tool=append_section" in message
     assert "status=ok" in message
     assert "duration_ms=" in message
     assert f"<redacted code len={len(code)}>" in message
     assert code not in message
+
 
 def test_mcp_tool_failure_logs_error_details(tmp_path, caplog):
     tools = create_tool_functions(
