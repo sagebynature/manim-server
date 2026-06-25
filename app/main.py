@@ -13,6 +13,7 @@ from app.models import (
     AppendSectionRequest,
     AppendSectionResponse,
     CreateSessionRequest,
+    ListTemplatesResponse,
     ListSessionsResponse,
     OkResponse,
     RenderRequest,
@@ -83,6 +84,15 @@ def create_app(data_dir: Path | None = None, renderer=None) -> FastAPI:
     @app.get("/ready", response_model=OkResponse)
     def ready() -> dict[str, bool]:
         return {"ok": True}
+
+    @app.get(
+        "/templates",
+        response_model=ListTemplatesResponse,
+        summary=DOCS["list_templates"].summary,
+        description=DOCS["list_templates"].description,
+    )
+    def list_templates():
+        return ListTemplatesResponse(templates=service.list_templates())
 
     @app.post(
         "/sessions",

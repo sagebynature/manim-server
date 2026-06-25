@@ -86,6 +86,20 @@ def test_create_session_unknown_template_falls_back_to_default(tmp_path: Path):
     assert response.json()["templateId"] == "default"
 
 
+def test_list_templates_returns_builtin_template_catalog(tmp_path: Path):
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.get("/templates")
+
+    assert response.status_code == 200
+    templates = response.json()["templates"]
+    ids = {template["templateId"] for template in templates}
+    assert {"default", "clean-title", "dark-grid", "presentation-card", "three-d"} <= ids
+    dark_grid = next(template for template in templates if template["templateId"] == "dark-grid")
+    assert dark_grid["description"] == "Dark grid template."
+    assert "coordinate" in dark_grid["useCases"]
+
+
 def test_openapi_documents_request_and_response_payloads(tmp_path: Path):
     app = create_app(data_dir=tmp_path)
     schema = app.openapi()
@@ -113,6 +127,9 @@ def test_openapi_documents_request_and_response_payloads(tmp_path: Path):
 
     assert json_schema("get", "/health") == {"$ref": "#/components/schemas/OkResponse"}
     assert json_schema("get", "/ready") == {"$ref": "#/components/schemas/OkResponse"}
+    assert json_schema("get", "/templates") == {
+        "$ref": "#/components/schemas/ListTemplatesResponse"
+    }
     assert json_schema("post", "/sessions") == {
         "$ref": "#/components/schemas/SessionDetail"
     }
