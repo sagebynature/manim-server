@@ -1,3 +1,8 @@
+"""Dark grid template.
+
+Use for math explainers, graph-heavy scenes, coordinate geometry, and technical diagrams that benefit from a persistent dark coordinate plane.
+"""
+
 from manim import *
 from manim.opengl import *
 

@@ -1,3 +1,8 @@
+"""Clean title template with underline.
+
+Use for tutorials, lecture snippets, and structured explainer videos that need a restrained title treatment without a background grid.
+"""
+
 from manim import *
 from manim.opengl import *
 

@@ -1,3 +1,8 @@
+"""Default title template.
+
+Use for general-purpose 2D Manim scenes that need a simple title anchored at the top before user-authored animation sections begin.
+"""
+
 from manim import *
 from manim.opengl import *
 
