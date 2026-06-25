@@ -30,7 +30,9 @@ def test_template_store_lists_docstring_metadata_without_executing_code(tmp_path
         encoding="utf-8",
     )
     (template_dir / "bad/name.py").parent.mkdir(exist_ok=True)
-    (template_dir / "bad/name.py").write_text('"""Ignored nested template."""', encoding="utf-8")
+    (template_dir / "bad/name.py").write_text(
+        '"""Ignored nested template."""', encoding="utf-8"
+    )
 
     templates = TemplateStore(template_dir).list_templates()
 

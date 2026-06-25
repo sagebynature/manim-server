@@ -1,4 +1,14 @@
 import subprocess
+from pathlib import Path
+
+
+def test_ci_installs_make_before_running_make_test():
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    install_make = workflow.index("apt-get install -y make")
+    run_tests = workflow.index("run: make test")
+
+    assert install_make < run_tests
 
 
 def test_docker_run_restarts_named_container_before_starting():

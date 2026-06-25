@@ -148,7 +148,6 @@ def create_mcp_server(service: SessionService) -> FastMCP:
     tools = create_tool_functions(service)
     mcp.tool(description=DOCS["list_templates"].description)(tools["list_templates"])
 
-
     @mcp.tool(description=DOCS["create_session"].description)
     def create_session(
         title: str | None = None, template_id: str | None = None

@@ -94,8 +94,16 @@ def test_list_templates_returns_builtin_template_catalog(tmp_path: Path):
     assert response.status_code == 200
     templates = response.json()["templates"]
     ids = {template["templateId"] for template in templates}
-    assert {"default", "clean-title", "dark-grid", "presentation-card", "three-d"} <= ids
-    dark_grid = next(template for template in templates if template["templateId"] == "dark-grid")
+    assert {
+        "default",
+        "clean-title",
+        "dark-grid",
+        "presentation-card",
+        "three-d",
+    } <= ids
+    dark_grid = next(
+        template for template in templates if template["templateId"] == "dark-grid"
+    )
     assert dark_grid["description"] == "Dark grid template."
     assert "coordinate" in dark_grid["useCases"]
 

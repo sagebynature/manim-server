@@ -53,6 +53,7 @@ def test_mcp_create_session_accepts_template_id(tmp_path):
 
     assert session["templateId"] == "lecture"
 
+
 def test_mcp_list_templates_returns_template_catalog(tmp_path):
     template_dir = tmp_path / "template"
     template_dir.mkdir()
