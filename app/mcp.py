@@ -1,4 +1,5 @@
 import logging
+from dataclasses import asdict, is_dataclass
 from functools import wraps
 from inspect import signature
 from time import perf_counter
@@ -13,7 +14,11 @@ from app.sessions import SessionService
 
 
 def dump(value) -> dict[str, Any]:
-    return value.model_dump(mode="json") if hasattr(value, "model_dump") else value
+    if hasattr(value, "model_dump"):
+        return value.model_dump(mode="json")
+    if is_dataclass(value):
+        return asdict(value)
+    return value
 
 
 logger = logging.getLogger("app.mcp")
@@ -87,6 +92,9 @@ def log_tool_requests(name, func):
 
 
 def create_tool_functions(service: SessionService):
+    def list_templates():
+        return {"templates": [dump(item) for item in service.list_templates()]}
+
     def create_session(title: str | None = None, template_id: str | None = None):
         return dump(service.create_session(title, template_id=template_id))
 
@@ -123,6 +131,7 @@ def create_tool_functions(service: SessionService):
         return dump(service.reset_session(session_id))
 
     tools = {
+        "list_templates": list_templates,
         "create_session": create_session,
         "list_sessions": list_sessions,
         "get_session": get_session,
@@ -137,6 +146,8 @@ def create_tool_functions(service: SessionService):
 def create_mcp_server(service: SessionService) -> FastMCP:
     mcp = FastMCP("manim-server", json_response=True, streamable_http_path="/")
     tools = create_tool_functions(service)
+    mcp.tool(description=DOCS["list_templates"].description)(tools["list_templates"])
+
 
     @mcp.tool(description=DOCS["create_session"].description)
     def create_session(

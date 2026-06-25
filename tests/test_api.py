@@ -110,6 +110,7 @@ def test_openapi_documents_request_and_response_payloads(tmp_path: Path):
         ]["schema"]
 
     shared_routes = [
+        ("list_templates", "get", "/templates"),
         ("create_session", "post", "/sessions"),
         ("list_sessions", "get", "/sessions"),
         ("get_session", "get", "/sessions/{session_id}"),
