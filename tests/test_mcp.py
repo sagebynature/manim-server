@@ -1,4 +1,5 @@
 import logging
+import pytest
 
 from fastapi.routing import Mount
 from starlette.testclient import TestClient
@@ -75,6 +76,22 @@ def test_mcp_tool_success_logs_sanitized_arguments(tmp_path, caplog):
     assert "duration_ms=" in message
     assert f"<redacted code len={len(code)}>" in message
     assert code not in message
+
+def test_mcp_tool_failure_logs_error_details(tmp_path, caplog):
+    tools = create_tool_functions(
+        SessionService(SessionStore(tmp_path), FakeRenderer())
+    )
+
+    with caplog.at_level(logging.INFO, logger="app.mcp"):
+        with pytest.raises(ValueError):
+            tools["render_scene"]("missing-session", cache="invalid")
+
+    messages = [record.getMessage() for record in caplog.records]
+    message = next(message for message in messages if "mcp tool failed" in message)
+    assert "tool=render_scene" in message
+    assert "status=failed" in message
+    assert "duration_ms=" in message
+    assert "error_type=ValueError" in message
 
 
 def test_app_mounts_mcp_route(tmp_path):

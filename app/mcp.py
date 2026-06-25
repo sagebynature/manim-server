@@ -61,7 +61,19 @@ def log_tool_requests(name, func):
     def wrapped(*args, **kwargs):
         start = perf_counter()
         arguments = sanitize_tool_arguments(func, args, kwargs)
-        result = func(*args, **kwargs)
+        try:
+            result = func(*args, **kwargs)
+        except Exception as exc:
+            duration_ms = (perf_counter() - start) * 1000
+            logger.exception(
+                "mcp tool failed tool=%s status=failed duration_ms=%.2f "
+                "error_type=%s arguments=%s",
+                name,
+                duration_ms,
+                type(exc).__name__,
+                arguments,
+            )
+            raise
         duration_ms = (perf_counter() - start) * 1000
         logger.info(
             "mcp tool invoked tool=%s status=ok duration_ms=%.2f arguments=%s",
