@@ -7,3 +7,4 @@ dist/
 *.egg-info/
 .manim-server-data/
 .serena/
+.worktrees/
