@@ -65,7 +65,7 @@ def log_tool_requests(name, func):
             result = func(*args, **kwargs)
         except Exception as exc:
             duration_ms = (perf_counter() - start) * 1000
-            logger.exception(
+            logger.error(
                 "mcp tool failed tool=%s status=failed duration_ms=%.2f "
                 "error_type=%s arguments=%s",
                 name,

@@ -86,8 +86,13 @@ def test_mcp_tool_failure_logs_error_details(tmp_path, caplog):
         with pytest.raises(ValueError):
             tools["render_scene"]("missing-session", cache="invalid")
 
-    messages = [record.getMessage() for record in caplog.records]
-    message = next(message for message in messages if "mcp tool failed" in message)
+    failure_records = [
+        record for record in caplog.records if "mcp tool failed" in record.getMessage()
+    ]
+    assert len(failure_records) == 1
+    failure_record = failure_records[0]
+    message = failure_record.getMessage()
+    assert failure_record.exc_info is None
     assert "tool=render_scene" in message
     assert "status=failed" in message
     assert "duration_ms=" in message
