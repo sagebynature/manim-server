@@ -2,13 +2,27 @@ import subprocess
 from pathlib import Path
 
 
-def test_ci_installs_make_before_running_make_test():
+def test_ci_installs_make_before_pytest_uses_makefile_tests():
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
 
     install_make = workflow.index("apt-get install -y make")
-    run_tests = workflow.index("run: make test")
+    run_pytest = workflow.index("run: /opt/venv/bin/pytest -q")
 
-    assert install_make < run_tests
+    assert install_make < run_pytest
+
+
+def test_ci_uses_prebuilt_manim_virtualenv():
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert "run: make test" not in workflow
+    assert "uv pip install --python /opt/venv/bin/python -e . --group dev" in workflow
+    assert "run: /opt/venv/bin/ruff check app tests" in workflow
+    assert "run: /opt/venv/bin/ruff format --check app tests" in workflow
+    assert (
+        "run: /opt/venv/bin/ty check --python /opt/venv/bin/python app tests"
+        in workflow
+    )
+    assert "run: /opt/venv/bin/pytest -q" in workflow
 
 
 def test_docker_run_restarts_named_container_before_starting():
