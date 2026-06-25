@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,4 +18,4 @@ jobs:
           enable-cache: true
 
       - name: Run typecheck, tests, and build
-        run: make check
+        run: make test
